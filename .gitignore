@@ -26,3 +26,11 @@
 *.exe
 *.out
 *.app
+/ipch
+/D2mapDMA/ARM
+/GpioBenchmark/ARM
+/.vs/Wi2Pi/v14/*.suo
+/D2mapDMA/*.user
+/*.sdf
+/*.suo
+/GpioBenchmark/*.user
