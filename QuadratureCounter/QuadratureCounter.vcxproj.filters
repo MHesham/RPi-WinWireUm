@@ -1,0 +1,54 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="..\Wi2Pi\bcm.h">
+      <Filter>Wi2Pi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Wi2Pi\bcmcm.h">
+      <Filter>Wi2Pi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Wi2Pi\bcmdma.h">
+      <Filter>Wi2Pi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Wi2Pi\bcmgpio.h">
+      <Filter>Wi2Pi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Wi2Pi\bcmpwm.h">
+      <Filter>Wi2Pi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Wi2Pi\common.h">
+      <Filter>Wi2Pi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Wi2Pi\d2map.h">
+      <Filter>Wi2Pi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Wi2Pi\HpcTimer.h">
+      <Filter>Wi2Pi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Wi2Pi\regaccess.h">
+      <Filter>Wi2Pi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Wi2Pi\Wi2Pi.h">
+      <Filter>Wi2Pi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Wi2Pi\SwQuadratureCounter.h">
+      <Filter>Wi2Pi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Wi2Pi\NxtMotor.h">
+      <Filter>Wi2Pi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Wi2Pi\SwServoPwm.h">
+      <Filter>Wi2Pi</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Wi2Pi">
+      <UniqueIdentifier>{1840cf5e-abb5-4c48-a134-db1e77e6e235}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

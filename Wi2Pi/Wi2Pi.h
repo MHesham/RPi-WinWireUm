@@ -204,7 +204,7 @@ namespace Wi2Pi
 
 		LogInfo("Initializing Wi2Pi Library");
 
-		if (!SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS))
+		if (!SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS))
 		{
 			LogError("SetPriorityClass REALTIME_PRIORITY_CLASS failed, %d", GetLastError());
 			return false;

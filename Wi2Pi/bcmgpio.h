@@ -101,6 +101,11 @@ namespace Wi2Pi
 		return (READ_REGISTER_NOFENCE_ULONG(GpioReg->Level) & (1 << pinNum)) > 0;
 	}
 
+	__inline ULONG GpioBank0Read()
+	{
+		return READ_REGISTER_NOFENCE_ULONG(GpioReg->Level);
+	}
+
 	__inline void BenchmarkGpio(int pinNum, const int numSamples)
 	{
 		PerfTimer timer;

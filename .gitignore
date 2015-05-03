@@ -34,3 +34,10 @@
 /*.sdf
 /*.suo
 /GpioBenchmark/*.user
+*.pdb
+*.log
+*.lastbuildstate
+*.tlog
+*.asm
+*.user
+*.opensdf

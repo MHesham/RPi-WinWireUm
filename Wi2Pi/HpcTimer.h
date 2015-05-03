@@ -38,6 +38,16 @@ namespace Wi2Pi
 				(stop.QuadPart - start.QuadPart);
 		}
 
+		double CalcOpsPerSecondNow(LONG numOps) const
+		{
+			LARGE_INTEGER now;
+			QueryPerformanceCounter(&now);
+
+			// numOps / sec = (Ticks/s) * numOps / Ticks
+			return (double)(this->ticksPerSecond.QuadPart * numOps) /
+				(now.QuadPart - start.QuadPart);
+		}
+
 		double CalcSeconds() const
 		{
 			return (double)(stop.QuadPart - start.QuadPart) /
