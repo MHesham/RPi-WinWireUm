@@ -1,13 +1,49 @@
 #include "pch.h"
+//#define LOG_VERBOSE
 #define DEBUG_TIMING
 #include "Wi2Pi.h"
 #include "NxtMotor.h"
 
 using namespace Wi2Pi;
 
-void MotorWorker()
+void MotorRpmTestWorker()
 {
-	LogVerbose("->MotorWorker");
+	LogFuncEnter();
+
+	NxtMotor motor(BCM_GPIO17, BCM_GPIO24, BCM_GPIO25, BCM_GPIO22, BCM_GPIO23);
+
+	if (!motor.Init())
+	{
+		LogInfo("Failed to init NXT motor");
+		return;
+	}
+
+	motor.Forward(100);
+
+	for (int i = 0; i < 5 && !GlobalShutdownFlag; ++i)
+	{
+		LogInfo("Forward RPM: %d", motor.GetRpm());
+		Sleep(1000);
+	}
+
+	motor.Backward(100);
+
+	for (int i = 0; i < 5 && !GlobalShutdownFlag; ++i)
+	{
+		LogInfo("Backward RPM: %d", motor.GetRpm());
+		Sleep(1000);
+	}
+
+	motor.StopCoast();
+
+	motor.Deinit();
+
+	LogFuncExit();
+}
+
+void MotorDegreeTestWorker()
+{
+	LogFuncEnter();
 
 	NxtMotor motor(BCM_GPIO17, BCM_GPIO24, BCM_GPIO25, BCM_GPIO22, BCM_GPIO23);
 
@@ -29,7 +65,7 @@ void MotorWorker()
 
 	motor.Deinit();
 
-	LogVerbose("<-MotorWorker");
+	LogFuncExit();
 }
 
 int __cdecl wmain()
@@ -40,7 +76,7 @@ int __cdecl wmain()
 		return -1;
 	}
 
-	std::thread motorThread(MotorWorker);
+	std::thread motorThread(MotorDegreeTestWorker);
 
 	system("pause");
 	

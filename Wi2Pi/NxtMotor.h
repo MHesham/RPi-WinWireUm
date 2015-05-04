@@ -77,9 +77,12 @@ namespace Wi2Pi
 			MotorEncoder.Deinit();
 		}
 
+		int GetRpm() const { return MotorEncoder.GetRpm(); }
+
 		void Forward(int powerPerct)
 		{
 			SetPower(powerPerct);
+			MotorEncoder.ResetCounter();
 			MotorDriver.Forward();
 		}
 
@@ -96,6 +99,7 @@ namespace Wi2Pi
 		void Backward(int powerPerct)
 		{
 			SetPower(powerPerct);
+			MotorEncoder.ResetCounter();
 			MotorDriver.Backward();
 		}
 
@@ -125,6 +129,7 @@ namespace Wi2Pi
 		void OnEncoderTargetReached()
 		{
 			StopBrake();
+			LogVerbose("Encoder target reached");
 		}
 
 		void SynthStopBrake()

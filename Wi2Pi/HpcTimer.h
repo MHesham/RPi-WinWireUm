@@ -48,6 +48,15 @@ namespace Wi2Pi
 				(now.QuadPart - start.QuadPart);
 		}
 
+		double CalcSecondsNow() const
+		{
+			LARGE_INTEGER now;
+			QueryPerformanceCounter(&now);
+
+			return (double)(now.QuadPart - start.QuadPart) /
+				this->ticksPerSecond.QuadPart;
+		}
+
 		double CalcSeconds() const
 		{
 			return (double)(stop.QuadPart - start.QuadPart) /
