@@ -2,51 +2,59 @@
 
 #include "Wi2Pi.h"
 #include <thread>
+#include <functional>
 
 namespace Wi2Pi
 {
-	class SwQuadratureCounter;
-
-	typedef void(*StepCounterCompareCallback)(SwQuadratureCounter* pQc);
-
 	class SwQuadratureCounter
 	{
 	public:
 		static const int NA = INT_MAX;
 
-		SwQuadratureCounter(int chAPin, int chBPin) :
-			Shutdown(false),
+		SwQuadratureCounter(int chAPin, int chBPin, int stepsPerRev, std::function<void()> onTargetCounterReachedCallback) :
+			ShutdownWaitFlag(false),
 			GpioBank0(0),
 			lastChAB(0),
 			Counter(0),
 			MissedPulseCount(0),
-			CounterCallback(nullptr),
-			CounterCompare(-1),
+			TargetCounter(0),
 			ChAPin(chAPin),
-			ChBPin(chBPin)
+			ChBPin(chBPin),
+			StepsPerRev(stepsPerRev),
+			OnTargetCounterReachedCallback(onTargetCounterReachedCallback),
+			EncoderReadings(0)
 		{}
-
-		~SwQuadratureCounter()
-		{
-			Shutdown = true;
-			CounterStateMachineWorkerThread.join();
-		}
 
 		bool Init()
 		{
 			GpioFuncSelect(ChAPin, BCM_GPIO_FSEL_Input);
 			GpioFuncSelect(ChBPin, BCM_GPIO_FSEL_Input);
 
-			CounterStateMachineWorkerThread = std::thread([&]() { CounterStateMachineWorker(); });
-			(void)::SetThreadPriority(CounterStateMachineWorkerThread.native_handle(), THREAD_PRIORITY_HIGHEST);
+			CounterStateMachineThread = std::thread([&]() { CounterStateMachineWorker(); });
+			(void)::SetThreadPriority(CounterStateMachineThread.native_handle(), THREAD_PRIORITY_HIGHEST);
+
+			GlobalShutdownWatcherThread = std::thread([&]() { GlobalShutdownWatcherWorker(); });
 
 			return true;
 		}
 
-		void SetCounterCompare(int counterCompare, StepCounterCompareCallback counterCallback)
+		void Deinit()
 		{
-			CounterCompare = counterCompare;
-			CounterCallback = counterCallback;
+			ShutdownWaitFlag = true;
+			CounterStateMachineThread.join();
+		}
+
+		void WaitTargetReached()
+		{
+			while (!TargetCounterReachedWaitFlag && !ShutdownWaitFlag);
+
+			TargetCounterReachedWaitFlag = false;
+		}
+
+		void SetTargetCounter(int targetCounter)
+		{
+			Counter = 0;
+			TargetCounter = targetCounter;
 		}
 
 		int GetCounter() const { return Counter; }
@@ -62,21 +70,22 @@ namespace Wi2Pi
 
 	private:
 
+		void GlobalShutdownWatcherWorker()
+		{
+			(void)WaitForSingleObject(GlobalShutdownEvt, INFINITE);
+			ShutdownWaitFlag = true;
+		}
+
 		void CounterStateMachineWorker()
 		{
-			const int X4CounterStateMachine[][4] = {
-				{ 0, -1,  1,  NA },
-				{ 1,  0,  NA, -1 },
-				{ -1, NA, 0,  1 },
-				{ NA, 1, -1,  0 },
+			const int X4CounterStateMachine1Way[] = {
+				0, -1, 1, 0, 1, 0, 0, -1, -1, 0, 0, 1, 0, 1, -1, 0
 			};
 
 			ULONG chAMask = (1 << ChAPin);
 			ULONG chBMask = (1 << ChBPin);
 
-			Timer.Start();
-
-			for (;!Shutdown;)
+			for (;!ShutdownWaitFlag;)
 			{
 				ULONG bank = GpioBank0Read();
 
@@ -88,52 +97,45 @@ namespace Wi2Pi
 
 				ULONG newChAB = ((bank & chAMask) ? 2 : 0) | ((bank & chBMask) ? 1 : 0);
 
-				// Some other pin state changed but ChA and ChB state didn't
-				if (newChAB == lastChAB)
-					continue;
+				EncoderReadings <<= 2;
+				EncoderReadings |= newChAB;
 
-				int step = X4CounterStateMachine[lastChAB][newChAB];
+				LONG step = X4CounterStateMachine1Way[EncoderReadings & 0b1111];
 
-				if (step == NA)
-				{
-					Counter = 0;
-					++MissedPulseCount;
+				Counter += step;
 
-					lastChAB = newChAB;
-					Direction = 0;
-				}
-				else
-				{
-					Counter += step;
-
-					lastChAB = newChAB;
+				if (step != 0)
 					Direction = step;
 
-					if (CounterCallback &&
-						Counter == CounterCompare)
-					{
-						CounterCallback(this);
+				if (Counter == TargetCounter)
+				{
+					OnTargetCounterReachedCallback();
+					TargetCounter = 0;
+					TargetCounterReachedWaitFlag = true;
+				}
 
-						Counter = 0;
-						MissedPulseCount = 0;
-						Direction = 0;
-						Timer.Start();
-					}
+				if (Counter == StepsPerRev)
+				{
+					Counter = 0;
 				}
 			}
 		}
 
-		volatile int Shutdown;
+		volatile int ShutdownWaitFlag;
 		volatile ULONG GpioBank0;
 		volatile ULONG  lastChAB;
 		volatile int Counter;
 		volatile int MissedPulseCount;
 		volatile int Direction;
-		volatile int CounterCompare;
+		volatile int TargetCounter;
+		volatile int StepsPerRev;
+		volatile int EncoderReadings;
+		volatile int TargetCounterReachedWaitFlag;
 		int ChAPin;
 		int ChBPin;
-		volatile StepCounterCompareCallback CounterCallback;
-		std::thread CounterStateMachineWorkerThread;
+		std::function<void()> OnTargetCounterReachedCallback;
+		std::thread CounterStateMachineThread;
+		std::thread GlobalShutdownWatcherThread;
 		PerfTimer Timer;
 	};
 }

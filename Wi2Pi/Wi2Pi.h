@@ -194,8 +194,13 @@ namespace Wi2Pi
 		return true;
 	}
 
+	volatile bool GlobalShutdownFlag = false;
+	HANDLE GlobalShutdownEvt;
+
 	static bool Init()
 	{
+		GlobalShutdownEvt = CreateEvent(NULL, TRUE, FALSE, NULL);
+
 		(void)QueryPerformanceCounter(&Wi2PiT0);
 		(void)QueryPerformanceFrequency(&HpcFreq);
 
@@ -272,5 +277,11 @@ namespace Wi2Pi
 		}
 
 		return true;
+	}
+
+	void Deinit()
+	{
+		GlobalShutdownFlag = true;
+		SetEvent(GlobalShutdownEvt);
 	}
 }

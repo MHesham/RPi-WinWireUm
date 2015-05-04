@@ -49,8 +49,9 @@ namespace Wi2Pi
 		NxtMotor(int enablePin, int hbridgeIN1Pin, int hbridgeIN2Pin, int enoderChAPin, int encoderChBPin) :
 			EnablePin(enablePin),
 			MotorDriver(hbridgeIN1Pin, hbridgeIN2Pin),
-			Encoder(enoderChAPin, encoderChBPin)
-		{}
+			MotorEncoder(enoderChAPin, encoderChBPin, 720, std::bind(&NxtMotor::OnEncoderTargetReached, this))
+		{
+		}
 
 		bool Init()
 		{
@@ -58,11 +59,11 @@ namespace Wi2Pi
 
 			if (!MotorDriver.Init())
 			{
-				LogError("Failed to init motor HBridge");
+				LogError("Failed to init motor driver");
 				return false;
 			}
 
-			if (!Encoder.Init())
+			if (!MotorEncoder.Init())
 			{
 				LogError("Failed to init NXT motor quadrature encoder");
 				return false;
@@ -71,24 +72,41 @@ namespace Wi2Pi
 			return true;
 		}
 
+		void Deinit()
+		{
+			MotorEncoder.Deinit();
+		}
+
 		void Forward(int powerPerct)
 		{
-			if (powerPerct > 0)
-				GpioPinWrite(EnablePin, true);
-			else
-				GpioPinWrite(EnablePin, false);
-
+			SetPower(powerPerct);
 			MotorDriver.Forward();
+		}
+
+		void ForwardInDegrees(int angle, int powerPerct)
+		{
+			SetPower(powerPerct);
+
+			MotorEncoder.SetTargetCounter(AngleToEncoderSteps(angle));
+			MotorDriver.Forward();
+
+			MotorEncoder.WaitTargetReached();
 		}
 
 		void Backward(int powerPerct)
 		{
-			if (powerPerct > 0)
-				GpioPinWrite(EnablePin, true);
-			else
-				GpioPinWrite(EnablePin, false);
-
+			SetPower(powerPerct);
 			MotorDriver.Backward();
+		}
+
+		void BackwardInDegrees(int angle, int powerPerct)
+		{
+			SetPower(powerPerct);
+
+			MotorEncoder.SetTargetCounter(AngleToEncoderSteps(-angle));
+			MotorDriver.Backward();
+
+			MotorEncoder.WaitTargetReached();
 		}
 
 		void StopCoast()
@@ -103,8 +121,48 @@ namespace Wi2Pi
 		}
 
 	private:
+
+		void OnEncoderTargetReached()
+		{
+			StopBrake();
+		}
+
+		void SynthStopBrake()
+		{
+			if (MotorEncoder.GetDirection() > 0)
+			{
+				MotorDriver.Backward();
+				Sleep(35);
+				MotorDriver.Stop();
+			}
+			else if (MotorEncoder.GetDirection() < 0)
+			{
+				MotorDriver.Forward();
+				Sleep(35);
+				MotorDriver.Stop();
+			}
+			else
+			{
+				LogError("Direction unknown");
+			}
+		}
+
+		void SetPower(int powerPerct)
+		{
+			if (powerPerct > 0)
+				GpioPinWrite(EnablePin, true);
+			else
+				GpioPinWrite(EnablePin, false);
+		}
+
+		int AngleToEncoderSteps(int angle)
+		{
+			// Because the encoder is running X4 mode
+			return angle * 2;
+		}
+
 		int EnablePin;
 		HBridge MotorDriver;
-		SwQuadratureCounter Encoder;
+		SwQuadratureCounter MotorEncoder;
 	};
 }

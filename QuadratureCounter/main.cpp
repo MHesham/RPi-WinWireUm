@@ -5,31 +5,6 @@
 
 using namespace Wi2Pi;
 
-volatile bool Shutdown = false;
-
-void OnHaflRev(SwQuadratureCounter* pQc)
-{
-	//LogInfo("Quadrature encoder compare reset @ %d", pQc->GetCounter());
-}
-
-void QuadratureReader(SwQuadratureCounter* pQc)
-{
-	LogInfo("Started quadrature encoder reader thread");
-
-	for (;!Shutdown;)
-	{
-		LogInfo(
-			"X%dCounter=%d, Dir=%d, Speed=%dstep/s, Missed=%dpulse(s)",
-			pQc->GetXResolution(),
-			pQc->GetCounter(),
-			pQc->GetDirection(),
-			(int)pQc->CounterFrequency(),
-			pQc->GetMissedPulseCount());
-
-		Sleep(1000);
-	}
-}
-
 void MotorWorker()
 {
 	LogVerbose("->MotorWorker");
@@ -42,47 +17,19 @@ void MotorWorker()
 		return;
 	}
 
-	motor.StopBrake();
-
-	for (int i = 0; i < 5 && !Shutdown; ++i)
+	for (int i = 0; !GlobalShutdownFlag; ++i)
 	{
-		LogInfo("Going forward...");
-		motor.Forward(100);
-		Sleep(500);
-
-		motor.StopBrake();
-		Sleep(500);
+		if (i & 1)
+			motor.ForwardInDegrees(180, 100);
+		else
+			motor.BackwardInDegrees(90, 100);
 	}
 
-	for (int i = 0; i < 5 && !Shutdown; ++i)
-	{
-		LogInfo("Going forward...");
-		motor.Forward(100);
-		Sleep(500);
+	motor.StopCoast();
 
-		motor.StopCoast();
-		Sleep(500);
-	}
+	motor.Deinit();
 
-	for (int i = 0; i < 5 && !Shutdown; ++i)
-	{
-		LogInfo("Going backward...");
-		motor.Backward(100);
-		Sleep(500);
-
-		motor.StopBrake();
-		Sleep(500);
-	}
-
-	for (int i = 0; i < 5 && !Shutdown; ++i)
-	{
-		LogInfo("Going backward...");
-		motor.Backward(100);
-		Sleep(500);
-
-		motor.StopCoast();
-		Sleep(500);
-	}
+	LogVerbose("<-MotorWorker");
 }
 
 int __cdecl wmain()
@@ -96,7 +43,9 @@ int __cdecl wmain()
 	std::thread motorThread(MotorWorker);
 
 	system("pause");
-	Shutdown = true;
+	
+	Wi2Pi::Deinit();
+
 	motorThread.join();
 
 	return 0;
