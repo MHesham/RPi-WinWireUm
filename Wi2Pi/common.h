@@ -45,8 +45,13 @@ namespace Wi2Pi
 
 #ifdef LOG_VERBOSE
 #define LogVerbose(S, ...) Wi2Pi::DbgPrintf(L##S##"\n", __VA_ARGS__)
+#define LogFuncEnter() Wi2Pi::DbgPrintf(L##"->" __FUNCTION__ "\n")
+#define LogFuncExit() Wi2Pi::DbgPrintf(L##"<-" __FUNCTION__ "\n")
 #else
 #define LogVerbose(S, ...)
+#define LogFuncEnter()
+#define LogFuncExit()
+
 #endif
 
 #define LogError(S, ...) Wi2Pi::DbgPrintf(L##"Error: "##S##"\n", __VA_ARGS__)
