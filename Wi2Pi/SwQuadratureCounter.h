@@ -10,6 +10,7 @@ namespace Wi2Pi
 	{
 	public:
 		static const int NA = INT_MAX;
+		static const LONG CounterLockSpinCount = 50000;
 
 		SwQuadratureCounter(int chAPin, int chBPin, int countsPerRev, std::function<void()> onTargetCounterReachedCallback) :
 			ShutdownWaitFlag(false),
@@ -29,7 +30,10 @@ namespace Wi2Pi
 			T0.QuadPart = 0;
 			T1.QuadPart = 0;
 
-			InitializeCriticalSectionAndSpinCount(&CounterLock, 5000);
+			CounterStateMachineTickCount = 0;
+			CounterStateMachineStartTime.QuadPart = 0;
+
+			(void)InitializeCriticalSectionAndSpinCount(&CounterLock, CounterLockSpinCount);
 		}
 
 		~SwQuadratureCounter()
@@ -71,6 +75,19 @@ namespace Wi2Pi
 			LeaveCriticalSection(&CounterLock);
 		}
 
+		int GetOversamplingFrequency() const
+		{
+			LARGE_INTEGER now;
+
+			(void)QueryPerformanceCounter(&now);
+
+			double samplePeriod = (double)Counter;
+			double samplingElapsedTime = (double)(now.QuadPart - CounterStateMachineStartTime.QuadPart) / (double)HpcFreq.QuadPart;
+			samplePeriod /= samplingElapsedTime;
+
+			return (int)(1.0 / samplePeriod);
+		}
+
 		int GetCounter() const { return Counter; }
 
 		int GetDirection() const { return Direction; }
@@ -83,8 +100,7 @@ namespace Wi2Pi
 				return 0;
 
 			double revolutionPeriod = (double)(T1.QuadPart - T0.QuadPart) / (double)HpcFreq.QuadPart;
-			double revolutionFreq = 1 / revolutionPeriod;
-			return (int)(revolutionFreq * 60.0);
+			return (int)(60.0 / revolutionPeriod);
 		}
 
 		// We implement a X4 mode only
@@ -124,8 +140,12 @@ namespace Wi2Pi
 			ULONG newChAB = ((GpioBank0 & chAMask) ? 2 : 0) | ((GpioBank0 & chBMask) ? 1 : 0);
 			EncoderReadings = newChAB;
 
+			QueryPerformanceCounter(&CounterStateMachineStartTime);
+
 			for (;!ShutdownWaitFlag;)
 			{
+				++CounterStateMachineTickCount;
+
 				ULONG bank = GpioBank0Read();
 
 				// No change in the GPIO pins state, nothing to do
@@ -186,6 +206,8 @@ namespace Wi2Pi
 		std::thread GlobalShutdownWatcherThread;
 		LARGE_INTEGER T0;
 		LARGE_INTEGER T1;
+		LARGE_INTEGER CounterStateMachineStartTime;
 		CRITICAL_SECTION CounterLock;
+		volatile ULONGLONG CounterStateMachineTickCount;
 	};
 }

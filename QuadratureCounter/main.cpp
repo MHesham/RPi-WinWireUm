@@ -72,7 +72,7 @@ void MotorRpmTestWorker()
 
 	for (int i = 0; i < 5 && !GlobalShutdownFlag; ++i)
 	{
-		LogInfo("Forward RPM: %d", motor.GetRpm());
+		LogInfo("Forward RPM: %d", motor.GetEncoder().GetRpm());
 		Sleep(1000);
 	}
 
@@ -80,9 +80,11 @@ void MotorRpmTestWorker()
 
 	for (int i = 0; i < 5 && !GlobalShutdownFlag; ++i)
 	{
-		LogInfo("Backward RPM: %d", motor.GetRpm());
+		LogInfo("Backward RPM: %d", motor.GetEncoder().GetRpm());
 		Sleep(1000);
 	}
+
+	LogInfo("Oversampling Freq: %dHz", motor.GetEncoder().GetOversamplingFrequency());
 
 	motor.StopCoast();
 

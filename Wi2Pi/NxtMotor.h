@@ -77,7 +77,7 @@ namespace Wi2Pi
 			MotorEncoder.Deinit();
 		}
 
-		int GetRpm() const { return MotorEncoder.GetRpm(); }
+		const SwQuadratureCounter& GetEncoder() const { return MotorEncoder; }
 
 		void Forward(int powerPerct)
 		{
