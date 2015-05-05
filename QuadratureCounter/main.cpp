@@ -84,7 +84,17 @@ void MotorRpmTestWorker()
 		Sleep(1000);
 	}
 
-	LogInfo("Oversampling Freq: %dHz", motor.GetEncoder().GetOversamplingFrequency());
+	// NXT motor is capable of 117RPM @ 9V, which is 117/60 = 1.95 rev/sec
+	// 1 rev -> 720 encoder sample on X4 mode
+	// 1.95 rev/sec = 1404 sample/sec = sampling at 1404 Hz
+
+	double oversamplingFreq = motor.GetEncoder().GetOversamplingFrequency();
+
+	LogInfo(
+		"Oversampling Freq: %dHz~%dMHz, Sample Period: %fns", 
+		(int)oversamplingFreq,
+		(int)oversamplingFreq / 1000000,
+		1000000000.0 / oversamplingFreq);
 
 	motor.StopCoast();
 

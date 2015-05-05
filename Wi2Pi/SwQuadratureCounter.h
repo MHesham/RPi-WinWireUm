@@ -75,17 +75,14 @@ namespace Wi2Pi
 			LeaveCriticalSection(&CounterLock);
 		}
 
-		int GetOversamplingFrequency() const
+		double GetOversamplingFrequency() const
 		{
 			LARGE_INTEGER now;
 
 			(void)QueryPerformanceCounter(&now);
 
-			double samplePeriod = (double)Counter;
 			double samplingElapsedTime = (double)(now.QuadPart - CounterStateMachineStartTime.QuadPart) / (double)HpcFreq.QuadPart;
-			samplePeriod /= samplingElapsedTime;
-
-			return (int)(1.0 / samplePeriod);
+			return (double)CounterStateMachineTickCount / samplingElapsedTime;
 		}
 
 		int GetCounter() const { return Counter; }
@@ -145,6 +142,14 @@ namespace Wi2Pi
 			for (;!ShutdownWaitFlag;)
 			{
 				++CounterStateMachineTickCount;
+
+				// On overflow, reset tick count and sampling start time
+				if (CounterStateMachineTickCount < 0)
+				{
+					CounterStateMachineTickCount = 1;
+					(void)QueryPerformanceCounter(&CounterStateMachineStartTime);
+					LogInfo("CounterStateMachineTickCount overflow!");
+				}
 
 				ULONG bank = GpioBank0Read();
 
@@ -208,6 +213,6 @@ namespace Wi2Pi
 		LARGE_INTEGER T1;
 		LARGE_INTEGER CounterStateMachineStartTime;
 		CRITICAL_SECTION CounterLock;
-		volatile ULONGLONG CounterStateMachineTickCount;
+		volatile LONGLONG CounterStateMachineTickCount;
 	};
 }
