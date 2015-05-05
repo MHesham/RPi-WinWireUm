@@ -11,6 +11,8 @@ void MotorControlTestWorker()
 {
 	LogFuncEnter();
 
+	LogInfo("NXT Motor Control Test");
+
 	NxtMotor motor(BCM_GPIO17, BCM_GPIO24, BCM_GPIO25, BCM_GPIO22, BCM_GPIO23);
 
 	if (!motor.Init())
@@ -23,6 +25,7 @@ void MotorControlTestWorker()
 
 	for (;!GlobalShutdownFlag;)
 	{
+		cout << ">";
 		cin >> cmd;
 
 		switch (cmd)
@@ -60,6 +63,8 @@ void MotorRpmTestWorker()
 {
 	LogFuncEnter();
 
+	LogInfo("NXT Motor Rpm Test");
+
 	NxtMotor motor(BCM_GPIO17, BCM_GPIO24, BCM_GPIO25, BCM_GPIO22, BCM_GPIO23);
 
 	if (!motor.Init())
@@ -84,10 +89,15 @@ void MotorRpmTestWorker()
 		Sleep(1000);
 	}
 
+	//
+	// To find out motor RPM using Oscilloscope:
+	//    RPM = (EncoderFreq * 2 / 720) * 60
+	//
 	// NXT motor is capable of 117RPM @ 9V, which is 117/60 = 1.95 rev/sec
 	// 1 rev -> 720 encoder sample on X4 mode
 	// 1.95 rev/sec = 1404 sample/sec = sampling at 1404 Hz
-
+	// The oscilloscope encoder reading will be showing 1404/2 = 720Hz
+	//
 	double oversamplingFreq = motor.GetEncoder().GetOversamplingFrequency();
 
 	LogInfo(
@@ -106,6 +116,8 @@ void MotorRpmTestWorker()
 void MotorDegreeTestWorker()
 {
 	LogFuncEnter();
+
+	LogInfo("NXT Motor By Degree Control Test");
 
 	NxtMotor motor(BCM_GPIO17, BCM_GPIO24, BCM_GPIO25, BCM_GPIO22, BCM_GPIO23);
 
@@ -154,25 +166,29 @@ int __cdecl wmain()
 	case 'C':
 	case 'c':
 		motorThread = std::thread(MotorControlTestWorker);
+		motorThread.join();
+		Wi2Pi::Deinit();
+
 		break;
 	case 'D':
 	case 'd':
 		motorThread = std::thread(MotorDegreeTestWorker);
 		system("pause");
+		Wi2Pi::Deinit();
+		motorThread.join();
 		break;
+
 	case 'R':
 	case 'r':
 		motorThread = std::thread(MotorRpmTestWorker);
 		system("pause");
+		Wi2Pi::Deinit();
+		motorThread.join();
+
 		break;
 	default:
 		break;
 	}
-
-	Wi2Pi::Deinit();
-
-	if (motorThread.joinable())
-		motorThread.join();
 
 	return 0;
 }
