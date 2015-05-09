@@ -7,6 +7,77 @@
 using namespace Wi2Pi;
 using namespace std;
 
+void RobotArmControlTestWorker()
+{
+	NxtMotor baseMotor(BCM_GPIO17, BCM_GPIO24, BCM_GPIO25, BCM_GPIO22, BCM_GPIO23);
+	NxtMotor armMotor(BCM_GPIO16, BCM_GPIO5, BCM_GPIO6, BCM_GPIO12, BCM_GPIO13);
+
+	LogFuncEnter();
+
+	LogInfo("NXT Robot Arm Control Test");
+
+	if (!baseMotor.Init() || !baseMotor.Init())
+	{
+		LogInfo("Failed to init NXT motor");
+		goto Exit;
+	}
+
+	char cmd;
+
+	for (;!GlobalShutdownFlag;)
+	{
+		cout << ">";
+		cin >> cmd;
+
+		switch (cmd)
+		{
+		case 'W':
+		case 'w':
+			armMotor.Forward(100);
+			break;
+		case 'S':
+		case 's':
+			armMotor.Backward(100);
+
+		case 'A':
+		case 'a':
+			baseMotor.Backward(100);
+
+		case 'D':
+		case 'd':
+			baseMotor.Backward(100);
+			break;
+
+		case 'Q':
+		case 'q':
+			baseMotor.StopBrake();
+			break;
+
+		case 'E':
+		case 'e':
+			armMotor.StopBrake();
+			break;
+
+		case 'X':
+		case 'x':
+			goto Exit;
+
+		default:
+			LogError("Unknown command %c", cmd);
+		}
+	}
+
+Exit:
+
+	baseMotor.StopCoast();
+	armMotor.StopCoast();
+
+	baseMotor.Deinit();
+	armMotor.Deinit();
+
+	LogFuncExit();
+}
+
 void MotorControlTestWorker()
 {
 	LogFuncEnter();
@@ -185,7 +256,13 @@ int __cdecl wmain()
 		Wi2Pi::Deinit();
 		motorThread.join();
 
+	case 'A':
+	case 'a':
+		motorThread = std::thread(RobotArmControlTestWorker);
+		motorThread.join();
+		Wi2Pi::Deinit();
 		break;
+
 	default:
 		break;
 	}

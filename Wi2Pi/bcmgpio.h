@@ -34,14 +34,19 @@ namespace Wi2Pi
 
 	enum BCM_AVAIL_GPIO_PIN
 	{
-		BCM_GPIO4 = 4,	// P1-7
+		BCM_GPIO4 = 4,		// P1-7
+		BCM_GPIO5 = 5,		// P1-29
+		BCM_GPIO6 = 6,		// P1-31
+		BCM_GPIO12 = 12,	// P1-32
+		BCM_GPIO13 = 13,	// P1-33
+		BCM_GPIO16 = 16,	// P1-36
 		BCM_GPIO17 = 17,	// P1-11
 		BCM_GPIO18 = 18,	// P1-12
-		BCM_GPIO21 = 21,   // P1-13
-		BCM_GPIO22 = 22,   // P1-15
-		BCM_GPIO23 = 23,   // P1-16
+		BCM_GPIO21 = 21,	// P1-13
+		BCM_GPIO22 = 22,	// P1-15
+		BCM_GPIO23 = 23,	// P1-16
 		BCM_GPIO24 = 24,	// P1-18
-		BCM_GPIO25 = 25,   // P1-22
+		BCM_GPIO25 = 25,	// P1-22
 	};
 
 	enum BCM_GPIO_FSEL
