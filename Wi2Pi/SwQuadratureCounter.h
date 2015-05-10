@@ -10,16 +10,17 @@ namespace Wi2Pi
 	{
 	public:
 		static const int NA = INT_MAX;
-		static const LONG CounterLockSpinCount = 50000;
+		static const LONG CounterLockSpinCount = 5000;
 
 		SwQuadratureCounter(int chAPin, int chBPin, int countsPerRev, std::function<void()> onTargetCounterReachedCallback) :
-			ShutdownWaitFlag(false),
+			LocalShutdownFlag(false),
 			GpioBank0(0),
 			lastChAB(0),
 			Counter(0),
 			MissedPulseCount(0),
 			TargetCounter(INT_MAX),
-			TargetCounterReachedWaitFlag(false),
+			LocalShutdownEvt(TargetCounterReachedWaitableEvts[0]),
+			TargetCounterReachedEvt(TargetCounterReachedWaitableEvts[1]),
 			Direction(0),
 			ChAPin(chAPin),
 			ChBPin(chBPin),
@@ -33,7 +34,7 @@ namespace Wi2Pi
 			CounterStateMachineTickCount = 0;
 			CounterStateMachineStartTime.QuadPart = 0;
 
-			(void)InitializeCriticalSectionAndSpinCount(&CounterLock, CounterLockSpinCount);
+			ZeroMemory(TargetCounterReachedWaitableEvts, sizeof(TargetCounterReachedWaitableEvts));
 		}
 
 		~SwQuadratureCounter()
@@ -46,25 +47,65 @@ namespace Wi2Pi
 			GpioFuncSelect(ChAPin, BCM_GPIO_FSEL_Input);
 			GpioFuncSelect(ChBPin, BCM_GPIO_FSEL_Input);
 
+			if (!InitializeCriticalSectionAndSpinCount(&CounterLock, CounterLockSpinCount))
+			{
+				LogError("InitializeCriticalSectionAndSpinCount failed, error=%d", GetLastError());
+				return false;
+			}
+
+			TargetCounterReachedEvt = CreateEvent(NULL, FALSE, FALSE, NULL);
+			if (!TargetCounterReachedEvt)
+			{
+				LogError("CreateEvent failed, error=%d", GetLastError());
+				return false;
+			}
+
+			LocalShutdownEvt = CreateEvent(NULL, TRUE, FALSE, NULL);
+			if (!LocalShutdownEvt)
+			{
+				LogError("CreateEvent failed, error=%d", GetLastError());
+				return false;
+			}
+
 			CounterStateMachineThread = std::thread([&]() { CounterStateMachineWorker(); });
-			(void)::SetThreadPriority(CounterStateMachineThread.native_handle(), THREAD_PRIORITY_HIGHEST);
+			if (!SetThreadPriority(CounterStateMachineThread.native_handle(), THREAD_PRIORITY_HIGHEST))
+			{
+				LogError("SetThreadPriority failed, error=%d", GetLastError());
+				return false;
+			}
 
 			GlobalShutdownWatcherThread = std::thread([&]() { GlobalShutdownWatcherWorker(); });
+			GlobalShutdownWaitableEvts[0] = GlobalShutdownEvt;
+			GlobalShutdownWaitableEvts[1] = LocalShutdownEvt;
 
 			return true;
 		}
 
 		void Deinit()
 		{
-			ShutdownWaitFlag = true;
+			LocalShutdown();
+
+			SAFE_CLOSE(TargetCounterReachedEvt);
+			SAFE_CLOSE(LocalShutdownEvt);
+
 			CounterStateMachineThread.join();
+			GlobalShutdownWatcherThread.join();
 		}
 
 		void WaitTargetReached()
 		{
-			while (!TargetCounterReachedWaitFlag && !ShutdownWaitFlag);
-
-			TargetCounterReachedWaitFlag = false;
+			DWORD waitRes = WaitForMultipleObjectsEx(
+				ARRAYSIZE(TargetCounterReachedWaitableEvts),
+				TargetCounterReachedWaitableEvts,
+				FALSE,
+				INFINITE,
+				FALSE);
+			switch (waitRes)
+			{
+			case WAIT_FAILED:
+				LogError("WaitForMultipleObjectsEx failed, error=%d", GetLastError());
+				break;
+			}
 		}
 
 		void SetTargetCounter(int targetCounter)
@@ -103,7 +144,7 @@ namespace Wi2Pi
 		// We implement a X4 mode only
 		int GetXResolution() const { return 4; }
 
-		void ResetCounter() 
+		void ResetCounter()
 		{
 			EnterCriticalSection(&CounterLock);
 			Counter = 0;
@@ -114,8 +155,20 @@ namespace Wi2Pi
 
 		void GlobalShutdownWatcherWorker()
 		{
-			(void)WaitForSingleObject(GlobalShutdownEvt, INFINITE);
-			ShutdownWaitFlag = true;
+			DWORD waitRes = WaitForMultipleObjectsEx(
+				ARRAYSIZE(GlobalShutdownWaitableEvts),
+				GlobalShutdownWaitableEvts,
+				FALSE,
+				INFINITE,
+				FALSE);
+			switch (waitRes)
+			{
+			case WAIT_FAILED:
+				LogError("WaitForMultipleObjectsEx failed, error=%d", GetLastError());
+				break;
+			}
+
+			LocalShutdown();
 		}
 
 		void CounterStateMachineWorker()
@@ -139,7 +192,7 @@ namespace Wi2Pi
 
 			QueryPerformanceCounter(&CounterStateMachineStartTime);
 
-			for (;!ShutdownWaitFlag;)
+			for (;!LocalShutdownFlag;)
 			{
 				++CounterStateMachineTickCount;
 
@@ -177,7 +230,7 @@ namespace Wi2Pi
 				{
 					OnTargetCounterReachedCallback();
 					TargetCounter = INT_MAX;
-					TargetCounterReachedWaitFlag = true;
+					(void)SetEvent(TargetCounterReachedEvt);
 				}
 
 				if (Counter == CountsPerRev)
@@ -194,7 +247,13 @@ namespace Wi2Pi
 			LogFuncExit();
 		}
 
-		volatile int ShutdownWaitFlag;
+		void LocalShutdown()
+		{
+			LocalShutdownFlag = true;
+			(void)SetEvent(LocalShutdownEvt);
+		}
+
+		volatile int LocalShutdownFlag;
 		volatile ULONG GpioBank0;
 		volatile ULONG  lastChAB;
 		volatile int Counter;
@@ -203,12 +262,19 @@ namespace Wi2Pi
 		volatile int TargetCounter;
 		volatile int CountsPerRev;
 		volatile int EncoderReadings;
-		volatile int TargetCounterReachedWaitFlag;
 		int ChAPin;
 		int ChBPin;
+
+		HANDLE& LocalShutdownEvt;
+		HANDLE& TargetCounterReachedEvt;
+		HANDLE TargetCounterReachedWaitableEvts[2];
+
+		HANDLE GlobalShutdownWaitableEvts[2];
+
 		std::function<void()> OnTargetCounterReachedCallback;
 		std::thread CounterStateMachineThread;
 		std::thread GlobalShutdownWatcherThread;
+
 		LARGE_INTEGER T0;
 		LARGE_INTEGER T1;
 		LARGE_INTEGER CounterStateMachineStartTime;

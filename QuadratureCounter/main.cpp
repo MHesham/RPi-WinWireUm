@@ -1,5 +1,5 @@
 #include "pch.h"
-//#define LOG_VERBOSE
+#define LOG_VERBOSE
 #define DEBUG_TIMING
 #include "Wi2Pi.h"
 #include "NxtMotor.h"
@@ -16,7 +16,7 @@ void RobotArmControlTestWorker()
 
 	LogInfo("NXT Robot Arm Control Test");
 
-	if (!baseMotor.Init() || !baseMotor.Init())
+	if (!baseMotor.Init() || !armMotor.Init())
 	{
 		LogInfo("Failed to init NXT motor");
 		goto Exit;
@@ -33,15 +33,18 @@ void RobotArmControlTestWorker()
 		{
 		case 'W':
 		case 'w':
-			armMotor.Forward(100);
+			armMotor.Backward(100);
 			break;
+
 		case 'S':
 		case 's':
-			armMotor.Backward(100);
+			armMotor.Forward(100);
+			break;
 
 		case 'A':
 		case 'a':
-			baseMotor.Backward(100);
+			baseMotor.Forward(100);
+			break;
 
 		case 'D':
 		case 'd':
@@ -68,9 +71,6 @@ void RobotArmControlTestWorker()
 	}
 
 Exit:
-
-	baseMotor.StopCoast();
-	armMotor.StopCoast();
 
 	baseMotor.Deinit();
 	armMotor.Deinit();
@@ -122,8 +122,6 @@ void MotorControlTestWorker()
 	}
 
 Exit:
-
-	motor.StopCoast();
 
 	motor.Deinit();
 
@@ -177,8 +175,6 @@ void MotorRpmTestWorker()
 		(int)oversamplingFreq / 1000000,
 		1000000000.0 / oversamplingFreq);
 
-	motor.StopCoast();
-
 	motor.Deinit();
 
 	LogFuncExit();
@@ -200,13 +196,19 @@ void MotorDegreeTestWorker()
 
 	for (int i = 0; !GlobalShutdownFlag; ++i)
 	{
-		if (i & 1)
-			motor.ForwardInDegrees(45, 100);
-		else
-			motor.BackwardInDegrees(90, 100);
-	}
+		LogVerbose("Itr%d -> %d", i, i & 1);
 
-	motor.StopCoast();
+		if (i & 1)
+		{
+			motor.ForwardInDegrees(45, 100);
+			motor.WaitTargetReached();
+		}
+		else
+		{
+			motor.BackwardInDegrees(90, 100);
+			motor.WaitTargetReached();
+		}
+	}
 
 	motor.Deinit();
 
@@ -225,6 +227,7 @@ int __cdecl wmain()
 	cout << "  C|c: Command control Test" << endl;
 	cout << "  D|d: Rotation in degrees test" << endl;
 	cout << "  R|r: RPM measurement test" << endl;
+	cout << "  A|a: NXT robot arm control test" << endl;
 
 	char cmd;
 	cout << ">";
@@ -239,8 +242,15 @@ int __cdecl wmain()
 		motorThread = std::thread(MotorControlTestWorker);
 		motorThread.join();
 		Wi2Pi::Deinit();
-
 		break;
+
+	case 'A':
+	case 'a':
+		motorThread = std::thread(RobotArmControlTestWorker);
+		motorThread.join();
+		Wi2Pi::Deinit();
+		break;
+
 	case 'D':
 	case 'd':
 		motorThread = std::thread(MotorDegreeTestWorker);
@@ -256,14 +266,8 @@ int __cdecl wmain()
 		Wi2Pi::Deinit();
 		motorThread.join();
 
-	case 'A':
-	case 'a':
-		motorThread = std::thread(RobotArmControlTestWorker);
-		motorThread.join();
-		Wi2Pi::Deinit();
-		break;
-
 	default:
+		LogInfo("Unknown command %c", cmd);
 		break;
 	}
 

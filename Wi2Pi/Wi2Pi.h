@@ -55,6 +55,9 @@ namespace Wi2Pi
 		{
 			ArrowResult res;
 
+			res.ThrowTimeUs = 0;
+			res.ThrowBackTimeUs = 0;
+
 			D2MAP_ARROW_OUTPUT_BUFFER dmapOutputBuffer;
 			LARGE_INTEGER throwStartTick;
 			LARGE_INTEGER throwBackEndTick;

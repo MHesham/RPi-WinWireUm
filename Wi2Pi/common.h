@@ -6,6 +6,8 @@
 #include <winioctl.h>
 #include "HpcTimer.h"
 
+#define SAFE_CLOSE(X) if (X) { CloseHandle(X); (X) = NULL; }
+
 namespace Wi2Pi
 {
 	static LARGE_INTEGER HpcFreq;

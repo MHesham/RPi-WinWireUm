@@ -34,8 +34,8 @@ namespace Wi2Pi
 
 		void Stop()
 		{
-			GpioPinWrite(HBridgeIN1Pin, true);
-			GpioPinWrite(HBridgeIN2Pin, true);
+			GpioPinWrite(HBridgeIN1Pin, false);
+			GpioPinWrite(HBridgeIN2Pin, false);
 		}
 
 	private:
@@ -69,11 +69,15 @@ namespace Wi2Pi
 				return false;
 			}
 
+			StopBrake();
+
 			return true;
 		}
 
 		void Deinit()
 		{
+			StopBrake();
+
 			MotorEncoder.Deinit();
 		}
 
@@ -81,47 +85,51 @@ namespace Wi2Pi
 
 		void Forward(int powerPerct)
 		{
-			SetPower(powerPerct);
+			SetPower(0);
 			MotorEncoder.ResetCounter();
 			MotorDriver.Forward();
+			SetPower(powerPerct);
 		}
 
 		void ForwardInDegrees(int angle, int powerPerct)
 		{
-			SetPower(powerPerct);
-
+			SetPower(0);
 			MotorEncoder.SetTargetCounter(AngleToEncoderSteps(angle));
 			MotorDriver.Forward();
-
-			MotorEncoder.WaitTargetReached();
+			SetPower(powerPerct);
 		}
 
 		void Backward(int powerPerct)
 		{
-			SetPower(powerPerct);
+			SetPower(0);
 			MotorEncoder.ResetCounter();
 			MotorDriver.Backward();
+			SetPower(powerPerct);
 		}
 
 		void BackwardInDegrees(int angle, int powerPerct)
 		{
-			SetPower(powerPerct);
-
+			SetPower(0);
 			MotorEncoder.SetTargetCounter(AngleToEncoderSteps(-angle));
 			MotorDriver.Backward();
-
-			MotorEncoder.WaitTargetReached();
+			SetPower(powerPerct);
 		}
 
 		void StopCoast()
 		{
-			GpioPinWrite(EnablePin, false);
+			SetPower(0);
 		}
 
 		void StopBrake()
 		{
-			GpioPinWrite(EnablePin, true);
+			SetPower(0);
 			MotorDriver.Stop();
+			SetPower(100);
+		}
+
+		void WaitTargetReached()
+		{
+			MotorEncoder.WaitTargetReached();
 		}
 
 	private:
@@ -130,26 +138,6 @@ namespace Wi2Pi
 		{
 			StopBrake();
 			LogVerbose("Encoder target reached");
-		}
-
-		void SynthStopBrake()
-		{
-			if (MotorEncoder.GetDirection() > 0)
-			{
-				MotorDriver.Backward();
-				Sleep(35);
-				MotorDriver.Stop();
-			}
-			else if (MotorEncoder.GetDirection() < 0)
-			{
-				MotorDriver.Forward();
-				Sleep(35);
-				MotorDriver.Stop();
-			}
-			else
-			{
-				LogError("Direction unknown");
-			}
 		}
 
 		void SetPower(int powerPerct)
