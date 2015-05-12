@@ -247,7 +247,7 @@
     <ClInclude Include="..\Wi2Pi\NxtMotor.h" />
     <ClInclude Include="..\Wi2Pi\regaccess.h" />
     <ClInclude Include="..\Wi2Pi\SwServoPwm.h" />
-    <ClInclude Include="..\Wi2Pi\SwQuadratureCounter.h" />
+    <ClInclude Include="..\Wi2Pi\QuadratureDecoder.h" />
     <ClInclude Include="..\Wi2Pi\Wi2Pi.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>

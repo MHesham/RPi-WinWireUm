@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SwQuadratureCounter.h"
+#include "QuadratureDecoder.h"
 
 namespace Wi2Pi
 {
@@ -49,7 +49,7 @@ namespace Wi2Pi
 		NxtMotor(int enablePin, int hbridgeIN1Pin, int hbridgeIN2Pin, int enoderChAPin, int encoderChBPin) :
 			EnablePin(enablePin),
 			MotorDriver(hbridgeIN1Pin, hbridgeIN2Pin),
-			MotorEncoder(enoderChAPin, encoderChBPin, 720, std::bind(&NxtMotor::OnEncoderTargetReached, this))
+			MotorDecoder(enoderChAPin, encoderChBPin, 720, std::bind(&NxtMotor::OnDecoderTargetReached, this))
 		{
 		}
 
@@ -63,9 +63,9 @@ namespace Wi2Pi
 				return false;
 			}
 
-			if (!MotorEncoder.Init())
+			if (!MotorDecoder.Init())
 			{
-				LogError("Failed to init NXT motor quadrature encoder");
+				LogError("Failed to init NXT motor quadrature decoder");
 				return false;
 			}
 
@@ -78,15 +78,15 @@ namespace Wi2Pi
 		{
 			StopBrake();
 
-			MotorEncoder.Deinit();
+			MotorDecoder.Deinit();
 		}
 
-		const SwQuadratureCounter& GetEncoder() const { return MotorEncoder; }
+		const QuadratureDecoder& GetDecoder() const { return MotorDecoder; }
 
 		void Forward(int powerPerct)
 		{
 			SetPower(0);
-			MotorEncoder.ResetCounter();
+			MotorDecoder.ResetCounter();
 			MotorDriver.Forward();
 			SetPower(powerPerct);
 		}
@@ -94,7 +94,7 @@ namespace Wi2Pi
 		void ForwardInDegrees(int angle, int powerPerct)
 		{
 			SetPower(0);
-			MotorEncoder.ResetCounterAndSetTarget(AngleToEncoderSteps(angle));
+			MotorDecoder.ResetCounterAndSetTargetAngle(angle);
 			MotorDriver.Forward();
 			SetPower(powerPerct);
 		}
@@ -102,7 +102,7 @@ namespace Wi2Pi
 		void Backward(int powerPerct)
 		{
 			SetPower(0);
-			MotorEncoder.ResetCounter();
+			MotorDecoder.ResetCounter();
 			MotorDriver.Backward();
 			SetPower(powerPerct);
 		}
@@ -110,7 +110,7 @@ namespace Wi2Pi
 		void BackwardInDegrees(int angle, int powerPerct)
 		{
 			SetPower(0);
-			MotorEncoder.ResetCounterAndSetTarget(AngleToEncoderSteps(-angle));
+			MotorDecoder.ResetCounterAndSetTargetAngle(-angle);
 			MotorDriver.Backward();
 			SetPower(powerPerct);
 		}
@@ -118,28 +118,27 @@ namespace Wi2Pi
 		void StopCoast()
 		{
 			SetPower(0);
-			MotorEncoder.ResetCounter();
+			MotorDecoder.ResetCounter();
 		}
 
 		void StopBrake()
 		{
 			SetPower(0);
 			MotorDriver.Stop();
-			MotorEncoder.ResetCounter();
+			MotorDecoder.ResetCounter();
 			SetPower(100);
 		}
 
 		void WaitTargetReached()
 		{
-			MotorEncoder.WaitTargetReached();
+			MotorDecoder.WaitTargetReached();
 		}
 
 	private:
 
-		void OnEncoderTargetReached()
+		void OnDecoderTargetReached()
 		{
 			StopBrake();
-			LogVerbose("Encoder target reached");
 		}
 
 		void SetPower(int powerPerct)
@@ -150,14 +149,8 @@ namespace Wi2Pi
 				GpioPinWrite(EnablePin, false);
 		}
 
-		int AngleToEncoderSteps(int angle)
-		{
-			// Because the encoder is running X4 mode
-			return angle * 2;
-		}
-
 		int EnablePin;
 		HBridge MotorDriver;
-		SwQuadratureCounter MotorEncoder;
+		QuadratureDecoder MotorDecoder;
 	};
 }

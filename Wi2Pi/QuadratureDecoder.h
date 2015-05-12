@@ -6,37 +6,40 @@
 
 namespace Wi2Pi
 {
-	class SwQuadratureCounter
+	class QuadratureDecoder
 	{
 	public:
-		static const int NA = INT_MAX;
 		static const LONG CounterLockSpinCount = 5000;
 
-		SwQuadratureCounter(int chAPin, int chBPin, int countsPerRev, std::function<void()> onTargetCounterReachedCallback) :
+		enum Mode
+		{
+			X4
+		};
+
+		QuadratureDecoder(int chAPin, int chBPin, int x4CountsPerRev, std::function<void()> onTargetCounterReachedCallback) :
 			LocalShutdownFlag(false),
 			GpioBank0(0),
 			lastChAB(0),
-			Counter(0),
+			CounterTicks(0),
 			TargetCounter(INT_MAX),
 			LocalShutdownEvt(TargetCounterReachedWaitableEvts[0]),
 			TargetCounterReachedEvt(TargetCounterReachedWaitableEvts[1]),
 			Direction(0),
 			ChAPin(chAPin),
 			ChBPin(chBPin),
-			CountsPerRev(countsPerRev),
+			CounterTicksPerRev(x4CountsPerRev),
 			OnTargetCounterReachedCallback(onTargetCounterReachedCallback),
 			EncoderReadings(0)
 		{
-			T0.QuadPart = 0;
-			T1.QuadPart = 0;
+			CountT0.QuadPart = 0;
 
 			CounterStateMachineTickCount = 0;
-			CounterStateMachineStartTime.QuadPart = 0;
+			CounterStateMachineT0.QuadPart = 0;
 
 			ZeroMemory(TargetCounterReachedWaitableEvts, sizeof(TargetCounterReachedWaitableEvts));
 		}
 
-		~SwQuadratureCounter()
+		~QuadratureDecoder()
 		{
 			DeleteCriticalSection(&CounterLock);
 		}
@@ -109,46 +112,50 @@ namespace Wi2Pi
 
 		double GetOversamplingFrequency() const
 		{
-			LARGE_INTEGER now;
+			LARGE_INTEGER t1;
 
-			(void)QueryPerformanceCounter(&now);
+			(void)QueryPerformanceCounter(&t1);
 
-			double samplingElapsedTime = (double)(now.QuadPart - CounterStateMachineStartTime.QuadPart) / (double)HpcFreq.QuadPart;
+			double samplingElapsedTime = (double)(t1.QuadPart - CounterStateMachineT0.QuadPart) / (double)HpcFreq.QuadPart;
 			return (double)CounterStateMachineTickCount / samplingElapsedTime;
 		}
 
 		int GetDirection() const { return Direction; }
 
-		int GetRpm() const
+		double GetRpm() const
 		{
-			if (T0.QuadPart == T1.QuadPart)
-				return 0;
+			LARGE_INTEGER t1;
+			(void)QueryPerformanceCounter(&t1);
 
-			double revolutionPeriod = (double)(T1.QuadPart - T0.QuadPart) / (double)HpcFreq.QuadPart;
-			return (int)(60.0 / revolutionPeriod);
+			// RPM formula source: http://www.ni.com/tutorial/3921/en/ with the exception that we don't
+			// use fixed time interval
+			double elapsedTime = (double)(t1.QuadPart - CountT0.QuadPart) / (double)HpcFreq.QuadPart;
+			return (((double)abs(CounterTicks) / (double)CounterTicksPerRev) * 60.0) / elapsedTime;
 		}
 
 		// We implement a X4 mode only
-		int GetXResolution() const { return 4; }
+		Mode GetMode() const { return X4; }
 
 		void ResetCounter()
 		{
 			EnterCriticalSection(&CounterLock);
-			Counter = 0;
+			CounterTicks = 0;
+			(void)QueryPerformanceCounter(&CountT0);
 			LeaveCriticalSection(&CounterLock);
 		}
 
-		void ResetCounterAndSetTarget(int targetCounter)
+		void ResetCounterAndSetTargetAngle(int targetAngle)
 		{
-			if (targetCounter == 0)
+			if (targetAngle == 0)
 			{
 				LogError("Invalid target counter value %d", TargetCounter);
 				return;
 			}
 
 			EnterCriticalSection(&CounterLock);
-			Counter = 0;
-			TargetCounter = targetCounter;
+			CounterTicks = 0;
+			TargetCounter = targetAngle * 2;
+			(void)QueryPerformanceCounter(&CountT0);
 			LeaveCriticalSection(&CounterLock);
 		}
 
@@ -183,15 +190,14 @@ namespace Wi2Pi
 			ULONG chAMask = (1 << ChAPin);
 			ULONG chBMask = (1 << ChBPin);
 
-			(void)QueryPerformanceCounter(&T0);
-			T1.QuadPart = T0.QuadPart;
+			(void)QueryPerformanceCounter(&CountT0);
 
 			GpioBank0 = GpioBank0Read();
 
 			ULONG newChAB = ((GpioBank0 & chAMask) ? 2 : 0) | ((GpioBank0 & chBMask) ? 1 : 0);
 			EncoderReadings = newChAB;
 
-			QueryPerformanceCounter(&CounterStateMachineStartTime);
+			QueryPerformanceCounter(&CounterStateMachineT0);
 
 			for (;!LocalShutdownFlag;)
 			{
@@ -201,7 +207,7 @@ namespace Wi2Pi
 				if (CounterStateMachineTickCount < 0)
 				{
 					CounterStateMachineTickCount = 1;
-					(void)QueryPerformanceCounter(&CounterStateMachineStartTime);
+					(void)QueryPerformanceCounter(&CounterStateMachineT0);
 					LogInfo("CounterStateMachineTickCount overflow!");
 				}
 
@@ -222,13 +228,13 @@ namespace Wi2Pi
 
 				EnterCriticalSection(&CounterLock);
 
-				Counter += step;
+				CounterTicks += step;
 
 				if (step != 0)
 					Direction = step;
 
 				if (TargetCounter != 0 &&
-					Counter == TargetCounter)
+					CounterTicks == TargetCounter)
 				{
 					OnTargetCounterReachedCallback();
 					TargetCounter = 0;
@@ -250,8 +256,8 @@ namespace Wi2Pi
 		volatile int LocalShutdownFlag;
 		volatile ULONG GpioBank0;
 		volatile ULONG  lastChAB;
-		volatile int Counter;
-		volatile int CountsPerRev;
+		volatile int CounterTicks;
+		volatile int CounterTicksPerRev;
 		volatile int Direction;
 		volatile int TargetCounter;
 		volatile int EncoderReadings;
@@ -268,9 +274,8 @@ namespace Wi2Pi
 		std::thread CounterStateMachineThread;
 		std::thread GlobalShutdownWatcherThread;
 
-		LARGE_INTEGER T0;
-		LARGE_INTEGER T1;
-		LARGE_INTEGER CounterStateMachineStartTime;
+		LARGE_INTEGER CountT0;
+		LARGE_INTEGER CounterStateMachineT0;
 		CRITICAL_SECTION CounterLock;
 		volatile LONGLONG CounterStateMachineTickCount;
 	};

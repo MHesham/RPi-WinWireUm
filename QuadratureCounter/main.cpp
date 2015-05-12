@@ -1,6 +1,6 @@
 #include "pch.h"
-#define LOG_VERBOSE
-#define DEBUG_TIMING
+//#define LOG_VERBOSE
+//#define DEBUG_TIMING
 #include "Wi2Pi.h"
 #include "NxtMotor.h"
 
@@ -144,17 +144,17 @@ void MotorRpmTestWorker()
 
 	motor.Forward(100);
 
-	for (int i = 0; i < 5 && !GlobalShutdownFlag; ++i)
+	for (int i = 0; i < 20 && !GlobalShutdownFlag; ++i)
 	{
-		LogInfo("Forward RPM: %d", motor.GetEncoder().GetRpm());
+		LogInfo("Forward RPM: %f", motor.GetDecoder().GetRpm());
 		Sleep(1000);
 	}
 
 	motor.Backward(100);
 
-	for (int i = 0; i < 5 && !GlobalShutdownFlag; ++i)
+	for (int i = 0; i < 20 && !GlobalShutdownFlag; ++i)
 	{
-		LogInfo("Backward RPM: %d", motor.GetEncoder().GetRpm());
+		LogInfo("Backward RPM: %f", motor.GetDecoder().GetRpm());
 		Sleep(1000);
 	}
 
@@ -167,7 +167,7 @@ void MotorRpmTestWorker()
 	// 1.95 rev/sec = 1404 sample/sec = sampling at 1404 Hz
 	// The oscilloscope encoder reading will be showing 1404/2 = 720Hz
 	//
-	double oversamplingFreq = motor.GetEncoder().GetOversamplingFrequency();
+	double oversamplingFreq = motor.GetDecoder().GetOversamplingFrequency();
 
 	LogInfo(
 		"Oversampling Freq: %dHz~%dMHz, Sample Period: %fns", 

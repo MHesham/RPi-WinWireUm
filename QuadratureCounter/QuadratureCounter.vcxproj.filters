@@ -32,13 +32,13 @@
     <ClInclude Include="..\Wi2Pi\Wi2Pi.h">
       <Filter>Wi2Pi</Filter>
     </ClInclude>
-    <ClInclude Include="..\Wi2Pi\SwQuadratureCounter.h">
-      <Filter>Wi2Pi</Filter>
-    </ClInclude>
     <ClInclude Include="..\Wi2Pi\NxtMotor.h">
       <Filter>Wi2Pi</Filter>
     </ClInclude>
     <ClInclude Include="..\Wi2Pi\SwServoPwm.h">
+      <Filter>Wi2Pi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Wi2Pi\QuadratureDecoder.h">
       <Filter>Wi2Pi</Filter>
     </ClInclude>
   </ItemGroup>
