@@ -113,7 +113,7 @@ namespace Wi2Pi
 
 	__inline void BenchmarkGpio(int pinNum, const int numSamples)
 	{
-		PerfTimer timer;
+		HpcTimer timer;
 
 		GpioFuncSelect(pinNum, BCM_GPIO_FSEL_Output);
 
@@ -124,7 +124,7 @@ namespace Wi2Pi
 		}
 		timer.Stop();
 
-		LogInfo("GPIO Writes/Second = %f", timer.CalcOpsPerSecond(numSamples));
+		LogInfo("GPIO Writes/Second = %f", timer.OperationsPerSecond(numSamples));
 
 		GpioFuncSelect(pinNum, BCM_GPIO_FSEL_Input);
 
@@ -135,6 +135,6 @@ namespace Wi2Pi
 		}
 		timer.Stop();
 
-		LogInfo("GPIO Reads/Second = %f", timer.CalcOpsPerSecond(numSamples));
+		LogInfo("GPIO Reads/Second = %f", timer.OperationsPerSecond(numSamples));
 	}
 }
