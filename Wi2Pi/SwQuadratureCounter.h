@@ -17,7 +17,6 @@ namespace Wi2Pi
 			GpioBank0(0),
 			lastChAB(0),
 			Counter(0),
-			MissedPulseCount(0),
 			TargetCounter(INT_MAX),
 			LocalShutdownEvt(TargetCounterReachedWaitableEvts[0]),
 			TargetCounterReachedEvt(TargetCounterReachedWaitableEvts[1]),
@@ -108,14 +107,6 @@ namespace Wi2Pi
 			}
 		}
 
-		void SetTargetCounter(int targetCounter)
-		{
-			EnterCriticalSection(&CounterLock);
-			Counter = 0;
-			TargetCounter = targetCounter;
-			LeaveCriticalSection(&CounterLock);
-		}
-
 		double GetOversamplingFrequency() const
 		{
 			LARGE_INTEGER now;
@@ -126,11 +117,7 @@ namespace Wi2Pi
 			return (double)CounterStateMachineTickCount / samplingElapsedTime;
 		}
 
-		int GetCounter() const { return Counter; }
-
 		int GetDirection() const { return Direction; }
-
-		int GetMissedPulseCount() const { return MissedPulseCount; }
 
 		int GetRpm() const
 		{
@@ -148,6 +135,20 @@ namespace Wi2Pi
 		{
 			EnterCriticalSection(&CounterLock);
 			Counter = 0;
+			LeaveCriticalSection(&CounterLock);
+		}
+
+		void ResetCounterAndSetTarget(int targetCounter)
+		{
+			if (targetCounter == 0)
+			{
+				LogError("Invalid target counter value %d", TargetCounter);
+				return;
+			}
+
+			EnterCriticalSection(&CounterLock);
+			Counter = 0;
+			TargetCounter = targetCounter;
 			LeaveCriticalSection(&CounterLock);
 		}
 
@@ -226,19 +227,12 @@ namespace Wi2Pi
 				if (step != 0)
 					Direction = step;
 
-				if (Counter == TargetCounter)
+				if (TargetCounter != 0 &&
+					Counter == TargetCounter)
 				{
 					OnTargetCounterReachedCallback();
-					TargetCounter = INT_MAX;
+					TargetCounter = 0;
 					(void)SetEvent(TargetCounterReachedEvt);
-				}
-
-				if (Counter == CountsPerRev)
-				{
-					Counter = 0;
-
-					T0.QuadPart = T1.QuadPart;
-					(void)QueryPerformanceCounter(&T1);
 				}
 
 				LeaveCriticalSection(&CounterLock);
@@ -257,10 +251,9 @@ namespace Wi2Pi
 		volatile ULONG GpioBank0;
 		volatile ULONG  lastChAB;
 		volatile int Counter;
-		volatile int MissedPulseCount;
+		volatile int CountsPerRev;
 		volatile int Direction;
 		volatile int TargetCounter;
-		volatile int CountsPerRev;
 		volatile int EncoderReadings;
 		int ChAPin;
 		int ChBPin;

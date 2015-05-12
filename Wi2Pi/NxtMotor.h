@@ -94,7 +94,7 @@ namespace Wi2Pi
 		void ForwardInDegrees(int angle, int powerPerct)
 		{
 			SetPower(0);
-			MotorEncoder.SetTargetCounter(AngleToEncoderSteps(angle));
+			MotorEncoder.ResetCounterAndSetTarget(AngleToEncoderSteps(angle));
 			MotorDriver.Forward();
 			SetPower(powerPerct);
 		}
@@ -110,7 +110,7 @@ namespace Wi2Pi
 		void BackwardInDegrees(int angle, int powerPerct)
 		{
 			SetPower(0);
-			MotorEncoder.SetTargetCounter(AngleToEncoderSteps(-angle));
+			MotorEncoder.ResetCounterAndSetTarget(AngleToEncoderSteps(-angle));
 			MotorDriver.Backward();
 			SetPower(powerPerct);
 		}
@@ -118,12 +118,14 @@ namespace Wi2Pi
 		void StopCoast()
 		{
 			SetPower(0);
+			MotorEncoder.ResetCounter();
 		}
 
 		void StopBrake()
 		{
 			SetPower(0);
 			MotorDriver.Stop();
+			MotorEncoder.ResetCounter();
 			SetPower(100);
 		}
 
