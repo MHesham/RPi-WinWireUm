@@ -9,7 +9,7 @@ using namespace Wi2Pi;
 
 int __cdecl wmain()
 {
-	if (!Wi2Pi::Init())
+	if (!Fx::Inst().Init())
 	{
 		LogInfo("Failed to init WinWiringPi lib");
 		return -1;

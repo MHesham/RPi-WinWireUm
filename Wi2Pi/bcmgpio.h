@@ -16,6 +16,8 @@
 #define BCM_GPIO_CLR_LENGTH			2
 #define BCM_GPIO_LEV_LENGTH			2
 
+#define BCM_GPIO_BANK0_NUM_PINS		32
+
 namespace Wi2Pi
 {
 #include <pshpack4.h>

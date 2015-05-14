@@ -14,6 +14,8 @@
 //    user and kernel
 //
 
+#pragma once
+
 #define D2MAP_SYMBOLIC_LINK_NAME    L"\\DosDevices\\D2map"
 #define D2MAP_USER_PATH             L"\\\\.\\D2map"
 

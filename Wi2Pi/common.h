@@ -4,9 +4,11 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include <winioctl.h>
+#include <crtdbg.h>
 #include "HpcTimer.h"
 
-#define SAFE_CLOSE(X) if (X) { CloseHandle(X); (X) = NULL; }
+#define SAFE_CLOSE(X)	if (X) { CloseHandle(X); (X) = NULL; }
+#define ROUNDUP(X, M)	((((X) / (M)) * (M)) + ((X) % (M) > 0 ? (M) : 0))
 
 namespace Wi2Pi
 {

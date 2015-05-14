@@ -77,7 +77,7 @@ namespace Wi2Pi
 			}
 
 			GlobalShutdownWatcherThread = std::thread([&]() { GlobalShutdownWatcherWorker(); });
-			GlobalShutdownWaitableEvts[0] = GlobalShutdownEvt;
+			GlobalShutdownWaitableEvts[0] = Fx::Inst().GlobalShutdownEvt;
 			GlobalShutdownWaitableEvts[1] = LocalShutdownEvt;
 
 			return true;

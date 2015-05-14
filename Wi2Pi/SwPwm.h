@@ -1,122 +1,89 @@
 #pragma once
 
-#include "Wi2Pi.h"
+#include "MMap.h"
 
 namespace Wi2Pi
 {
-	enum ServoType
+#define PWM_DEFAULT_FREQ_HZ		390.625
+#define PWM_MAX_FREQ_HZ			3906.25
+
+	typedef struct _ControlData
 	{
-		ServoDefault = 0,
-		ServoHS311,
-		ServoMicroSG90,
-		ServoUnknown
-	};
+		PBYTE Base;
+		ULONG Length;
+		ULONG *Step;	// [PulseNumSteps];
+		ULONG StepLength;
+		BCM_DMA_CB *CB; // [PulseNumDmaCbs];
+		ULONG CbLength;
+	} ControlData, *PControlData;
 
-	const int ServoMinMaxRange[][3] = {
-		{ ServoDefault, 1000, 2000 },
-		{ ServoHS311, 620, 2270 },
-		{ ServoMicroSG90, 640, 2300 },
-		{ ServoUnknown, 0, 0},
-	};
-
-	const int ChannelGpioPin[] = {
-		BCM_GPIO4,
-		BCM_GPIO17,
-		BCM_GPIO18,
-		BCM_GPIO21,
-		BCM_GPIO22,
-		BCM_GPIO23,
-		BCM_GPIO24,
-		BCM_GPIO25
-	};
-
-	int GpioPinChannel[BCM_GPIO25 + 1];
-
-	// PULSE_PERIOD_US is the pulse cycle time (period) per servo, in microseconds.
-	// Typically servos expect it to be 20,000us (20ms). If you are using
-	// 8 channels (gpios), this results in a 2.5ms timeslot per gpio channel. A
-	// servo output is set high at the start of its 2.5ms timeslot, and set low
-	// after the appropriate delay.
-#define PULSE_PERIOD_US			20000
-
-		// PULSE_STEP_TIME_US is the pulse width increment granularity, again in microseconds.
-		// Setting it too low will likely cause problems as the DMA controller will use too much
-		// memory bandwidth. 10us is a good value, though you might be ok setting it as low as 2us.
-		// The pace at which the DMA transfer kicks-in in microseconds, the lower the higher precision
-#define PULSE_STEP_TIME_US		10
-
-#define PULSE_NUM_STEPS			(PULSE_PERIOD_US/PULSE_STEP_TIME_US)
-
-		// 1 CB for setting GPIO CLR or SET register, the other wait for PWM fifo and do dummy write
-#define STEP_NUM_CBS			2
-
-		// PULSE_NUM_DMA_CBS is number of DMA Control Blocks for 1 Pulse
-#define PULSE_NUM_DMA_CBS		(PULSE_NUM_STEPS * STEP_NUM_CBS)
-
-#define NUM_CHANNELS			(sizeof(ChannelGpioPin) / sizeof(ChannelGpioPin[0]))
-
-		// CHANNEL_STEP_TIME_US is timeslot per channel (delay between setting pulse information)
-		// With this delay it will arrive at the same channel after PERIOD_TIME.
-#define CHANNEL_STEP_TIME_US    (PULSE_PERIOD_US/NUM_CHANNELS)
-
-		// CHANNEL_NUM_STEPS is the maximum number of PULSE_STEP_TIME_US that fit into one gpio
-		// channels timeslot. (eg. 250 for a 2500us timeslot with 10us PULSE_WIDTH_INCREMENT)
-#define CHANNEL_NUM_STEPS		(CHANNEL_STEP_TIME_US/PULSE_STEP_TIME_US)
-
-		// Min and max channel width settings (used only for controlling user input)
-#define CHANNEL_WIDTH_MIN		0
-#define CHANNEL_WIDTH_MAX		(CHANNEL_NUM_STEPS - 1)
-
-	typedef struct _SwServoPwmControlData
-	{
-		__declspec(align(32)) ULONG Step[PULSE_NUM_STEPS];
-		BCM_DMA_CB CB[PULSE_NUM_DMA_CBS];
-	} SwServoPwmControlData, *PSwServoPwmControlData;
-
-
-	class SwServoPwm
+	class SwPwm
 	{
 	public:
-		SwServoPwm() :
-			CtrlDataPA(NULL),
-			CtrlDataVA(nullptr)
-		{}
+		// 1 CB for setting GPIO CLR or SET register, the other wait for PWM fifo and do dummy write
+		static const int STEP_NUM_CBS = 2;
+		static const int CHANNEL_WIDTH_MAX = 256;
 
-		~SwServoPwm()
+		~SwPwm()
 		{
 			FinalizePrephirals();
 		}
 
-		bool Init()
+		static SwPwm& Inst()
 		{
-			LogInfo("SwServoPwm Configurations:\n"
+			static SwPwm inst;
+			return inst;
+		}
+
+		bool Init(const int *pwmPins, int numPins, double freqHz)
+		{
+			NumChannels = numPins;
+
+			if (freqHz > PWM_MAX_FREQ_HZ)
+				freqHz = PWM_MAX_FREQ_HZ;
+
+			PulseFreqHz = freqHz;
+			PulsePeriodUs = int(round(1000000.0 / PulseFreqHz));
+			
+			PulseStepTimeUs = int(round(PulsePeriodUs / CHANNEL_WIDTH_MAX));
+
+			// Adjust frequency/period for 8-bit resolution based on the 8-bit divisible step time
+			PulsePeriodUs = PulseStepTimeUs * CHANNEL_WIDTH_MAX;
+			PulseFreqHz = int(round(1000000.0 / PulsePeriodUs));
+
+			PulseNumSteps = (PulsePeriodUs / PulseStepTimeUs);
+
+			// PulseNumDmaCbs is number of DMA Control Blocks for 1 Pulse
+			PulseNumDmaCbs = (PulseNumSteps * STEP_NUM_CBS);
+
+			ULONG controlDataNonAlignedLength = ULONG(sizeof(ULONG) * PulseNumSteps) + ULONG(sizeof(BCM_DMA_CB) * PulseNumDmaCbs);
+
+			ControlDataAlignedLength = ROUNDUP(controlDataNonAlignedLength, 4096);
+
+			LogInfo("SwPwm Configurations:\n"
+				"    Pulse Freq: %fHz\n"
 				"    Pulse Period: %dus\n"
 				"    Pulse Step Time: %dus\n"
 				"    Pulse Num Steps: %d\n"
 				"    Num Channels: %d\n"
-				"    Channel Step Count: %d\n"
-				"    Channel Total Steps Time: %dus\n"
 				"    Channel Max Width: %d (%dus)\n"
-				"    Num DMA CBs: %d\n"
-				"    Control Data Byte Size Unaligned/Aligned: %d/%d \n",
-				PULSE_PERIOD_US,
-				PULSE_STEP_TIME_US,
-				PULSE_NUM_STEPS,
-				NUM_CHANNELS,
-				CHANNEL_NUM_STEPS,
-				CHANNEL_STEP_TIME_US,
+				"    Channel Num DMA CBs: %d\n"
+				"    Control Data Byte Aligned Size: %d\n",
+				PulseFreqHz,
+				PulsePeriodUs,
+				PulseStepTimeUs,
+				PulseNumSteps,
+				NumChannels,
 				CHANNEL_WIDTH_MAX,
-				CHANNEL_WIDTH_MAX * PULSE_STEP_TIME_US,
-				PULSE_NUM_DMA_CBS,
-				sizeof(SwServoPwmControlData),
-				ControlDataLength);
-
-			ZeroMemory((PVOID)GpioPinChannel, sizeof(GpioPinChannel));
+				CHANNEL_WIDTH_MAX * PulseStepTimeUs,
+				PulseNumDmaCbs,
+				ControlDataAlignedLength);
 
 			LogInfo("Channel to GPIO pin mapping:");
-			for (int channel = 0; channel < NUM_CHANNELS; ++channel)
+			for (int channel = 0; channel < NumChannels; ++channel)
 			{
-				int pin = ChannelGpioPin[channel];
+				int pin = pwmPins[channel];
+				ChannelGpioPin[channel] = pin;
 				GpioPinChannel[pin] = channel;
 
 				LogInfo("    CH%d -> GPIO%d", channel, pin);
@@ -141,26 +108,26 @@ namespace Wi2Pi
 			return true;
 		}
 
-		void SetChannelWidth(int channel, int widthUS)
+		void SetChannelDutyCycle(int channel, double perct)
 		{
-			if (channel >= NUM_CHANNELS)
+			if (channel >= NumChannels)
 			{
 				LogError("Invalid CH%d", channel);
 				return;
 			}
 
-			int width = widthUS / PULSE_STEP_TIME_US;
+			int width = (int)(perct * CHANNEL_WIDTH_MAX);
 
 			// Clamp width to the allowed range
-			if (width < CHANNEL_WIDTH_MIN)
-				width = CHANNEL_WIDTH_MIN;
+			if (width < 0)
+				width = 0;
 			else if (width > CHANNEL_WIDTH_MAX)
 				width = CHANNEL_WIDTH_MAX;
 
 			ULONG gpioClr0BA = BCM_GPIO_BUS_BASE + ((ULONG)GpioReg->Clear - (ULONG)GpioReg);
 			ULONG gpioSet0BA = BCM_GPIO_BUS_BASE + ((ULONG)GpioReg->Set - (ULONG)GpioReg);
-			PBCM_DMA_CB channelCB0 = CtrlDataVA->CB + channel * CHANNEL_NUM_STEPS * STEP_NUM_CBS;
-			PULONG channelStep = CtrlDataVA->Step + channel * CHANNEL_NUM_STEPS;
+			PBCM_DMA_CB channelCB0 = CtrlDataVA.CB + channel * PulseNumSteps * STEP_NUM_CBS;
+			PULONG channelStep = CtrlDataVA.Step + channel * PulseNumSteps;
 
 			ULONG channelMask = 1 << ChannelGpioPin[channel];
 
@@ -180,30 +147,30 @@ namespace Wi2Pi
 			}
 		}
 
-		void SetServoAngle(int channel, int angle, ServoType type)
+	private:
+
+		SwPwm() :
+			CtrlDataPA(NULL),
+			NumChannels(0),
+			PulsePeriodUs(0),
+			PulseStepTimeUs(0),
+			PulseNumSteps(0),
+			PulseNumDmaCbs(0),
+			PulseFreqHz(PWM_DEFAULT_FREQ_HZ)
 		{
-			if ((int)type >= (int)ServoUnknown)
-			{
-				LogError("Invalid servo type %d", type);
-				return;
-			}
-
-			int width = MapRange(angle, 0, 180, ServoMinMaxRange[type][1], ServoMinMaxRange[type][2]);
-
-			LogInfo("Set Servo @CH%d @GPIO%d -> %d' (%dus)", channel, ChannelGpioPin[channel], angle, width);
-			SetChannelWidth(channel, width);
+			ZeroMemory((PVOID)GpioPinChannel, sizeof(GpioPinChannel));
+			ZeroMemory((PVOID)ChannelGpioPin, sizeof(ChannelGpioPin));
 		}
 
-	private:
 		ULONG GetControlDataStepBA(int stepIdx)
 		{
-			int stepOffset = (PBYTE)(CtrlDataVA->Step + stepIdx) - (PBYTE)CtrlDataVA;
+			int stepOffset = (PBYTE)(CtrlDataVA.Step + stepIdx) - (PBYTE)CtrlDataVA.Base;
 			return BCM_CPU_TO_BUS_DRAM_ADDR((ULONG)CtrlDataPA + stepOffset);
 		}
 
 		ULONG GetControlDataCbBA(int cbIdx)
 		{
-			int cbOffset = (PBYTE)(CtrlDataVA->CB + cbIdx) - (PBYTE)CtrlDataVA;
+			int cbOffset = (PBYTE)(CtrlDataVA.CB + cbIdx) - (PBYTE)CtrlDataVA.Base;
 			ULONG ba = BCM_CPU_TO_BUS_DRAM_ADDR((ULONG)CtrlDataPA + cbOffset);
 			_ASSERT(!(ba % 32) && "CB BA should be 256-bit (32-byte)aligned");
 
@@ -214,7 +181,7 @@ namespace Wi2Pi
 		{
 			LogInfo("Initializing prehirals");
 
-			for (int i = 0; i < NUM_CHANNELS; ++i)
+			for (int i = 0; i < NumChannels; ++i)
 			{
 				GpioFuncSelect(ChannelGpioPin[i], BCM_GPIO_FSEL_Output);
 				GpioPinWrite(ChannelGpioPin[i], 0);
@@ -234,7 +201,7 @@ namespace Wi2Pi
 			MicroDelay(100);
 
 			// Divisor = 500 = 1MHz Clock
-			WRITE_REGISTER_ULONG(&CmReg->PwmDivisor, BCM_PWMCLK_PSSWD | BCM_PWMCLK_DIV_INT(500));
+			WRITE_REGISTER_ULONG(&CmReg->PwmDivisor, BCM_PWMCLK_PSSWD | BCM_PWMCLK_DIV_INT(50));
 			MicroDelay(100);
 
 			// Enabl PWM clock and wait for busy flag to go high
@@ -245,7 +212,7 @@ namespace Wi2Pi
 
 			LogInfo("PWM clock configured");
 
-			WRITE_REGISTER_ULONG(&PwmReg->Ch1Range, PULSE_STEP_TIME_US);
+			WRITE_REGISTER_ULONG(&PwmReg->Ch1Range, PulseStepTimeUs * 10);
 			MicroDelay(10);
 
 			// Enable DMA and set PANIC and DREQ threshold to 15
@@ -290,24 +257,32 @@ namespace Wi2Pi
 		{
 			LogInfo("Creating and initializing DMA control blocks");
 
-			auto res = MMap::Inst().AllocMap(ControlDataLength);
+			auto res = MMap::Inst().AllocMap(ControlDataAlignedLength);
 			CtrlDataPA = res.PhysicalAddress;
-			CtrlDataVA = (PSwServoPwmControlData)res.UserAddress;
+			CtrlDataVA.Base = (PBYTE)res.UserAddress;
 
-			if (CtrlDataVA == NULL)
+			if (CtrlDataVA.Base == NULL)
 			{
-				LogError("D2MAP::AllocMap failed");
+				LogError("MMap::AllocMap failed");
 				return false;
 			}
 
-			LogInfo("Allocated %d byte SwServoPwmControlData block @VA:0x%08x @PA:0x%08x", ControlDataLength, CtrlDataVA, CtrlDataPA);
+			CtrlDataVA.Length = ControlDataAlignedLength;
+			CtrlDataVA.Step = (ULONG*)CtrlDataVA.Base;
+			_ASSERT((ULONG)CtrlDataVA.Step % 32 == 0);
+			CtrlDataVA.StepLength = PulseNumSteps;
+			CtrlDataVA.CB = (PBCM_DMA_CB)(CtrlDataVA.Step + CtrlDataVA.StepLength);
+			_ASSERT((ULONG)CtrlDataVA.CB % 32 == 0);
+			CtrlDataVA.CbLength = PulseNumDmaCbs;
 
-			ZeroMemory(CtrlDataVA, ControlDataLength);
-			for (size_t channel = 0; channel < NUM_CHANNELS; ++channel)
+			LogInfo("Allocated %d byte ControlData block @VA:0x%08x @PA:0x%08x", CtrlDataVA.Length, CtrlDataVA.Base, CtrlDataPA);
+
+			ZeroMemory(CtrlDataVA.Base, ControlDataAlignedLength);
+			for (int channel = 0; channel < NumChannels; ++channel)
 			{
-				for (size_t step = 0; step < CHANNEL_NUM_STEPS; ++step)
+				for (int step = 0; step < PulseNumSteps; ++step)
 				{
-					CtrlDataVA->Step[(channel * CHANNEL_NUM_STEPS) + step] = 1 << ChannelGpioPin[channel];
+					CtrlDataVA.Step[(channel * PulseNumSteps) + step] = 1 << ChannelGpioPin[channel];
 				}
 			}
 
@@ -319,9 +294,9 @@ namespace Wi2Pi
 			int currCbIdx = 0;
 			ULONG firstCbBA = 0;
 
-			for (int step = 0; step < PULSE_NUM_STEPS; ++step)
+			for (int step = 0; step < PulseNumSteps; ++step)
 			{
-				PBCM_DMA_CB cb0VA = CtrlDataVA->CB + currCbIdx;
+				PBCM_DMA_CB cb0VA = CtrlDataVA.CB + currCbIdx;
 
 				cb0VA->TI = BCM_DMA_TI_NO_WIDE_BURSTS | BCM_DMA_TI_WAIT_RESP;
 				cb0VA->SOURCE_AD = GetControlDataStepBA(step);
@@ -332,13 +307,13 @@ namespace Wi2Pi
 
 				if (firstCbBA == 0)
 				{
-					ULONG firstCbOffset = (ULONG)cb0VA - (ULONG)CtrlDataVA;
+					ULONG firstCbOffset = (ULONG)cb0VA - (ULONG)CtrlDataVA.Base;
 					firstCbBA = BCM_CPU_TO_BUS_DRAM_ADDR((ULONG)CtrlDataPA + firstCbOffset);
 				}
 
 				++currCbIdx;
 
-				PBCM_DMA_CB cb1VA = CtrlDataVA->CB + currCbIdx;
+				PBCM_DMA_CB cb1VA = CtrlDataVA.CB + currCbIdx;
 				cb1VA->TI = BCM_DMA_TI_NO_WIDE_BURSTS | BCM_DMA_TI_WAIT_RESP | BCM_DMA_TI_DEST_DREQ | BCM_DMA_IT_PER_MAP(BCM_PWM_DMA_DREQ);
 				// Any dummy data is used and its value will have no effect
 				// We use the FIFO just to control pulse timing
@@ -352,7 +327,7 @@ namespace Wi2Pi
 			}
 
 			// Make the CBs circular linked list by linking last CB to first CB
-			PBCM_DMA_CB cbVA = CtrlDataVA->CB + currCbIdx - 1;
+			PBCM_DMA_CB cbVA = CtrlDataVA.CB + currCbIdx - 1;
 			cbVA->NEXTCONBK = GetControlDataCbBA(0);
 
 			_ASSERT(cbVA->NEXTCONBK == firstCbBA && "Last CB should be linked to first CB");
@@ -385,7 +360,7 @@ namespace Wi2Pi
 
 			LogInfo("DMA engine stopped");
 
-			for (int i = 0; i < NUM_CHANNELS; ++i)
+			for (int i = 0; i < NumChannels; ++i)
 			{
 				GpioFuncSelect(ChannelGpioPin[i], BCM_GPIO_FSEL_Output);
 				GpioPinWrite(ChannelGpioPin[i], 0);
@@ -393,8 +368,21 @@ namespace Wi2Pi
 		}
 
 	private:
-		const ULONG ControlDataLength = ROUNDUP(sizeof(SwServoPwmControlData), 4096);
+
+		ULONG ControlDataAlignedLength;
 		ULONG CtrlDataPA;
-		PSwServoPwmControlData CtrlDataVA;
+		ControlData CtrlDataVA;
+		double PulseFreqHz;
+		int NumChannels;
+		int PulsePeriodUs;
+		int PulseNumSteps;
+		// PulseStepTimeUs is the pulse width increment granularity, again in microseconds.
+		// Setting it too low will likely cause problems as the DMA controller will use too much
+		// memory bandwidth. 10us is a good value, though you might be ok setting it as low as 2us.
+		// The pace at which the DMA transfer kicks-in in microseconds, the lower the higher precision
+		int PulseStepTimeUs;
+		int PulseNumDmaCbs;
+		int ChannelGpioPin[BCM_GPIO_BANK0_NUM_PINS];
+		int GpioPinChannel[BCM_GPIO_BANK0_NUM_PINS];
 	};
 }

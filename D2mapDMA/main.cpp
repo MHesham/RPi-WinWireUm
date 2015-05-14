@@ -13,7 +13,7 @@
 using namespace std;
 using namespace Wi2Pi;
 
-SwPwm pwm;
+SwServoPwm pwm;
 
 void Calibrate()
 {
@@ -84,7 +84,7 @@ void StressSwPwm()
 
 int __cdecl wmain()
 {
-	if (!Wi2Pi::Init())
+	if (!Fx::Inst().Init())
 	{
 		LogError("Failed to init Wi2Pi lib");
 		return false;

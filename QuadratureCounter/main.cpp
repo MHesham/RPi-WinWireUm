@@ -3,6 +3,7 @@
 //#define DEBUG_TIMING
 #include "Wi2Pi.h"
 #include "NxtMotor.h"
+#include "SwServoPwm.h"
 
 using namespace Wi2Pi;
 using namespace std;
@@ -24,7 +25,7 @@ void RobotArmControlTestWorker()
 
 	char cmd;
 
-	for (;!GlobalShutdownFlag;)
+	for (;!Fx::Inst().Inst().GlobalShutdownFlag;)
 	{
 		cout << ">";
 		cin >> cmd;
@@ -94,7 +95,7 @@ void MotorControlTestWorker()
 
 	char cmd;
 
-	for (;!GlobalShutdownFlag;)
+	for (;!Fx::Inst().Inst().GlobalShutdownFlag;)
 	{
 		cout << ">";
 		cin >> cmd;
@@ -144,7 +145,7 @@ void MotorRpmTestWorker()
 
 	motor.Forward(100);
 
-	for (int i = 0; i < 20 && !GlobalShutdownFlag; ++i)
+	for (int i = 0; i < 20 && !Fx::Inst().GlobalShutdownFlag; ++i)
 	{
 		LogInfo("Forward RPM: %f", motor.GetDecoder().GetRpm());
 		Sleep(1000);
@@ -152,7 +153,7 @@ void MotorRpmTestWorker()
 
 	motor.Backward(100);
 
-	for (int i = 0; i < 20 && !GlobalShutdownFlag; ++i)
+	for (int i = 0; i < 20 && !Fx::Inst().GlobalShutdownFlag; ++i)
 	{
 		LogInfo("Backward RPM: %f", motor.GetDecoder().GetRpm());
 		Sleep(1000);
@@ -170,7 +171,7 @@ void MotorRpmTestWorker()
 	double oversamplingFreq = motor.GetDecoder().GetOversamplingFrequency();
 
 	LogInfo(
-		"Oversampling Freq: %dHz~%dMHz, Sample Period: %fns", 
+		"Oversampling Freq: %dHz~%dMHz, Sample Period: %fns",
 		(int)oversamplingFreq,
 		(int)oversamplingFreq / 1000000,
 		1000000000.0 / oversamplingFreq);
@@ -194,21 +195,27 @@ void MotorDegreeTestWorker()
 		return;
 	}
 
-	for (int i = 0; !GlobalShutdownFlag; ++i)
-	{
-		LogVerbose("Itr%d -> %d", i, i & 1);
+	LogInfo("Going forward in 1' increments");
 
-		if (i & 1)
-		{
-			motor.ForwardInDegrees(45, 100);
-			motor.WaitTargetReached();
-		}
-		else
-		{
-			motor.BackwardInDegrees(90, 100);
-			motor.WaitTargetReached();
-		}
+	for (int i = 1; !Fx::Inst().GlobalShutdownFlag && i <= 360; ++i)
+	{
+		LogVerbose("Itr%d Turn forward 1'", i);
+
+		motor.ForwardInDegrees(1, 100);
+		motor.WaitTargetReached();
+		motor.StopBrake();
 	}
+
+	//LogInfo("Going backward in 1' increments");
+
+	//for (int i = 1; !Fx::Inst().GlobalShutdownFlag && i <= 360; ++i)
+	//{
+	//	LogVerbose("Itr%d Turn backward 1'", i);
+
+	//	motor.BackwardInDegrees(-1, 100);
+	//	motor.WaitTargetReached();
+	//	motor.StopBrake();
+	//}
 
 	motor.Deinit();
 
@@ -217,11 +224,20 @@ void MotorDegreeTestWorker()
 
 int __cdecl wmain()
 {
-	if (!Wi2Pi::Init())
+	/*cout << "sizeof(ULONG)=" << sizeof(ULONG) << endl;
+	cout << "sizeof(BCM_DMA_CB)=" << sizeof(BCM_DMA_CB) << endl;
+	cout << "sizeof(SwServoPwmControlData::CB)=" << sizeof(SwServoPwmControlData::CB) << endl;
+	cout << "sizeof(SwServoPwmControlData::Step)=" << sizeof(SwServoPwmControlData::Step) << endl;
+	cout << "sizeof(SwServoPwmControlData)=" << sizeof(SwServoPwmControlData) << endl;
+
+	return 0;*/
+
+	if (!Fx::Inst().Init())
 	{
 		LogInfo("Failed to init WinWiringPi lib");
 		return -1;
 	}
+
 
 	cout << "\nNXT Motor Test" << endl;
 	cout << "  C|c: Command control Test" << endl;
@@ -241,21 +257,21 @@ int __cdecl wmain()
 	case 'c':
 		motorThread = std::thread(MotorControlTestWorker);
 		motorThread.join();
-		Wi2Pi::Deinit();
+		Fx::Inst().Deinit();
 		break;
 
 	case 'A':
 	case 'a':
 		motorThread = std::thread(RobotArmControlTestWorker);
 		motorThread.join();
-		Wi2Pi::Deinit();
+		Fx::Inst().Deinit();
 		break;
 
 	case 'D':
 	case 'd':
 		motorThread = std::thread(MotorDegreeTestWorker);
 		system("pause");
-		Wi2Pi::Deinit();
+		Fx::Inst().Deinit();
 		motorThread.join();
 		break;
 
@@ -263,7 +279,7 @@ int __cdecl wmain()
 	case 'r':
 		motorThread = std::thread(MotorRpmTestWorker);
 		system("pause");
-		Wi2Pi::Deinit();
+		Fx::Inst().Deinit();
 		motorThread.join();
 
 	default:
