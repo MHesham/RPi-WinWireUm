@@ -42,6 +42,15 @@
 namespace Wi2Pi
 {
 #include <pshpack4.h>
+	typedef struct _BCM_DMA_CH_REGISTERS
+	{
+		ULONG ControlAndStatus;
+		ULONG ControlBlockAddr;
+		ULONG CB[BCM_DMA_REG_CB_LEN];
+		ULONG Debug;
+		ULONG Pad[BCM_DMA_REG_PAD_LEN];
+	} BCM_DMA_CH_REGISTERS, *PBCM_DMA_CH_REGISTERS;
+
 	typedef struct _BCM_DMA_REGISTERS
 	{
 		ULONG Ch0ControlAndStatus;

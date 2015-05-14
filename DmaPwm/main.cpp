@@ -17,6 +17,7 @@ void PwmTestWorker()
 		LogInfo("Setting Duty Cycle=%f", dutyCycle);
 
 		SwPwm::Inst().SetChannelDutyCycle(0, dutyCycle);
+		SwPwm::Inst().SetChannelDutyCycle(1, 1.0 - dutyCycle);
 		Sleep(2000);
 	}
 
@@ -42,9 +43,8 @@ int __cdecl wmain()
 
 	LogInfo("Initializing software PWM");
 
-	int pwmPins[] = { BCM_GPIO17 };
-	// 3906.25
-	if (!SwPwm::Inst().Init(pwmPins, ARRAYSIZE(pwmPins), 490))
+	int pwmPins[] = { BCM_GPIO16, BCM_GPIO17 };
+	if (!SwPwm::Inst().Init(pwmPins, ARRAYSIZE(pwmPins), PWM_DEFAULT_FREQ_HZ))
 	{
 		LogError("Failed to init software PWM");
 		return -1;
