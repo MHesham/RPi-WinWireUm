@@ -5,6 +5,7 @@
 #include "regaccess.h"
 #include "bcmdma.h"
 #include "bcmpwm.h"
+#include "bcmpcm.h"
 #include "bcmcm.h"
 #include "bcmgpio.h"
 #include "MMap.h"
@@ -33,6 +34,16 @@ namespace Wi2Pi
 			}
 
 			LogInfo("PWM Direct Access Acquired @VA:0x%08x @PA:0x%08x @BA:0x%08x", PwmReg, BCM_PWM_CPU_BASE, BCM_CPU_TO_BUS_PERIPH_ADDR(BCM_PWM_CPU_BASE));
+
+			PcmReg = (PBCM_PCM_REGISTERS)MMap::Inst().Map((PVOID)BCM_PCM_CPU_BASE, BCM_PCM_REG_LEN).UserAddress;
+
+			if (!PcmReg)
+			{
+				LogError("D2Map::MMap PCM registers failed");
+				return false;
+			}
+
+			LogInfo("PCM Direct Access Acquired @VA:0x%08x @PA:0x%08x @BA:0x%08x", PcmReg, BCM_PCM_CPU_BASE, BCM_CPU_TO_BUS_PERIPH_ADDR(BCM_PCM_CPU_BASE));
 
 			GpioReg = (PBCM_GPIO_REGISTERS)MMap::Inst().Map((PVOID)BCM_GPIO_CPU_BASE, BCM_GPIO_REG_LEN).UserAddress;
 

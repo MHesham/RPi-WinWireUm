@@ -226,19 +226,19 @@ namespace Wi2Pi
 			WRITE_REGISTER_ULONG(&PwmReg->Control, 0);
 			MicroDelay(10);
 
-			if (!StopPwmClock(CmReg))
+			if (!StopPwmClock())
 				return false;
 
 			// Set PWM clock source
-			WRITE_REGISTER_ULONG(&CmReg->PwmControl, BCM_PWMCLK_PSSWD | BCM_PWMCLK_CTL_SRC_PLLD);
+			WRITE_REGISTER_ULONG(&CmReg->PwmControl, BCM_CM_PWM_PSSWD | BCM_PWMCLK_CTL_SRC_PLLD);
 			MicroDelay(100);
 
 			// Divisor = 500 = 1MHz Clock
-			WRITE_REGISTER_ULONG(&CmReg->PwmDivisor, BCM_PWMCLK_PSSWD | BCM_PWMCLK_DIV_INT(500));
+			WRITE_REGISTER_ULONG(&CmReg->PwmDivisor, BCM_CM_PWM_PSSWD | BCM_PWMCLK_DIV_INT(500));
 			MicroDelay(100);
 
 			// Enabl PWM clock and wait for busy flag to go high
-			WRITE_REGISTER_ULONG(&CmReg->PwmControl, BCM_PWMCLK_PSSWD | BCM_PWMCLK_CTL_ENABLE | BCM_PWMCLK_CTL_SRC_PLLD);
+			WRITE_REGISTER_ULONG(&CmReg->PwmControl, BCM_CM_PWM_PSSWD | BCM_PWMCLK_CTL_ENABLE | BCM_PWMCLK_CTL_SRC_PLLD);
 			MicroDelay(100);
 
 			while (!(READ_REGISTER_ULONG(&CmReg->PwmControl) & BCM_PWMCLK_CTL_BUSY));
@@ -367,7 +367,7 @@ namespace Wi2Pi
 			WRITE_REGISTER_ULONG(&PwmReg->Control, 0);
 			MicroDelay(100);
 
-			(void)StopPwmClock(CmReg);
+			(void)StopPwmClock();
 
 			LogInfo("PWM controller and clock stopped");
 

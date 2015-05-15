@@ -134,11 +134,16 @@ namespace Wi2Pi
 				return false;
 			}
 
-			DumpPwmRegisters();
+			DumpPcmRegisters();
 			DumpCmRegisters();
 			DumpDmaRegisters();
 
 			return true;
+		}
+
+		void SetPinDutyCycle(int pin, double perct)
+		{
+			SetChannelDutyCycle(GpioPinChannel[pin], perct);
 		}
 
 		void SetChannelDutyCycle(int channel, double perct)
@@ -207,45 +212,52 @@ namespace Wi2Pi
 
 			LogInfo("All Channels GPIO pins are set to output and asserted LOW");
 
-			// Turn off PWM controller
-			WRITE_REGISTER_ULONG(&PwmReg->Control, 0);
+			// Enable PCM and Disabe TX/RX
+			WRITE_REGISTER_ULONG(&PcmReg->ControlAndStatus, BCM_PCM_REG_CS_EN);
 			MicroDelay(10);
 
-			if (!StopPwmClock(CmReg))
+			if (!StopPcmClock())
 				return false;
 
-			// Set PWM clock source
-			WRITE_REGISTER_ULONG(&CmReg->PwmControl, BCM_PWMCLK_PSSWD | BCM_PWMCLK_CTL_SRC_PLLD);
+			// Set PCM clock source
+			WRITE_REGISTER_ULONG(&CmReg->PcmControl, BCM_CM_PCM_PSSWD | BCM_PCMCLK_CTL_SRC_PLLD);
 			MicroDelay(100);
 
-			// Divisor = 500 = 1MHz Clock
-			WRITE_REGISTER_ULONG(&CmReg->PwmDivisor, BCM_PWMCLK_PSSWD | BCM_PWMCLK_DIV_INT(50));
+			// Divisor = 50 = 10MHz Clock
+			WRITE_REGISTER_ULONG(&CmReg->PcmDivisor, BCM_CM_PCM_PSSWD | BCM_PCMCLK_DIV_INT(50));
 			MicroDelay(100);
 
-			// Enabl PWM clock and wait for busy flag to go high
-			WRITE_REGISTER_ULONG(&CmReg->PwmControl, BCM_PWMCLK_PSSWD | BCM_PWMCLK_CTL_ENABLE | BCM_PWMCLK_CTL_SRC_PLLD);
+			// Enabl PCM clock and wait for busy flag to go high
+			WRITE_REGISTER_ULONG(&CmReg->PcmControl, BCM_CM_PCM_PSSWD | BCM_PCMCLK_CTL_ENABLE | BCM_PCMCLK_CTL_SRC_PLLD);
 			MicroDelay(100);
 
-			while (!(READ_REGISTER_ULONG(&CmReg->PwmControl) & BCM_PWMCLK_CTL_BUSY));
+			while (!(READ_REGISTER_ULONG(&CmReg->PcmControl) & BCM_PCMCLK_CTL_BUSY));
 
-			LogInfo("PWM clock configured");
+			LogInfo("PCM clock configured");
 
-			WRITE_REGISTER_ULONG(&PwmReg->Ch1Range, PulseStepTimeUs * 10);
+			// Configure TX for 1 channel with 8-bits width
+			WRITE_REGISTER_ULONG(
+				&PcmReg->TransmitConfig,
+				BCM_PCM_REG_TXC_CH1WEX(0) | BCM_PCM_REG_TXC_CH1EN(1) | BCM_PCM_REG_TXC_CH1POS(0) | BCM_PCM_REG_TXC_CH1WID(0));
 			MicroDelay(10);
 
-			// Enable DMA and set PANIC and DREQ threshold to 15
-			WRITE_REGISTER_ULONG(&PwmReg->DmaConfig, BCM_PWM_REG_DMAC_ENAB | BCM_PWM_REG_DMAC_DREQ_15 | BCM_PWM_REG_DMAC_PANIC_15);
+			// Set Frame Length
+			WRITE_REGISTER_ULONG(&PcmReg->Mode, BCM_PCM_REG_MODE_FLEN((PulseStepTimeUs * 10) - 1));
 			MicroDelay(10);
 
-			// Clear CH1 FIFO
-			WRITE_REGISTER_ULONG(&PwmReg->Control, BCM_PWM_REG_CTL_CLRF1);
+			// Clear TX/RX FIFOs
+			WRITE_REGISTER_ULONG(&PcmReg->ControlAndStatus, READ_REGISTER_ULONG(&PcmReg->ControlAndStatus) | BCM_PCM_REG_CS_TXCLR | BCM_PCM_REG_CS_RXCLR);
 			MicroDelay(10);
 
-			// Use PWM mode, PWM algorithm, FIFO for CH1 transmission and enable PWM on CH1
-			WRITE_REGISTER_ULONG(&PwmReg->Control, BCM_PWM_REG_CTL_USEF1 | BCM_PWM_REG_CTL_PWEN1);
+			// Configure the DMA DREQ and Panic levels to be generated when the 64 x 32-bit TX FIFO has 1 slot available
+			WRITE_REGISTER_ULONG(&PcmReg->DreqLevel, BCM_PCM_REG_DREQ_TX(BCM_PCM_FIFO_LEN) | BCM_PCM_REG_DREQ_TX_PANIC(BCM_PCM_FIFO_LEN));
 			MicroDelay(10);
 
-			LogInfo("PWM controller configured");
+			// Enable PCM DMA DREQ generation for the FIFO
+			WRITE_REGISTER_ULONG(&PcmReg->ControlAndStatus, READ_REGISTER_ULONG(&PcmReg->ControlAndStatus) | BCM_PCM_REG_CS_DMAEN);
+			MicroDelay(10);
+
+			LogInfo("PCM controller configured");
 
 			// Initialize the DMA
 			for (int ch = 0; ch < NumChannels; ++ch)
@@ -272,6 +284,9 @@ namespace Wi2Pi
 			}
 
 			LogInfo("DMA controllers configured");
+
+			// Enable TX
+			WRITE_REGISTER_ULONG(&PcmReg->ControlAndStatus, READ_REGISTER_ULONG(&PcmReg->ControlAndStatus) | BCM_PCM_REG_CS_TXON);
 
 			return true;
 		}
@@ -315,7 +330,7 @@ namespace Wi2Pi
 
 			LogInfo("Touched all allocated DMA control blocks physical memory");
 
-			ULONG pwmFifoBA = BCM_PWM_BUS_BASE + ((ULONG)&PwmReg->FifoInput - (ULONG)PwmReg);
+			ULONG pcmFifoBA = BCM_PCM_BUS_BASE + ((ULONG)&PcmReg->Fifo - (ULONG)PcmReg);
 			ULONG gpioClr0BA = BCM_GPIO_BUS_BASE + ((ULONG)GpioReg->Clear - (ULONG)GpioReg);
 
 			for (int channel = 0; channel < NumChannels; ++channel)
@@ -336,11 +351,11 @@ namespace Wi2Pi
 					++currCbIdx;
 
 					PBCM_DMA_CB cb1VA = CtrlDataVA.GetChannelCbVA(channel, currCbIdx);
-					cb1VA->TI = BCM_DMA_TI_NO_WIDE_BURSTS | BCM_DMA_TI_WAIT_RESP | BCM_DMA_TI_DEST_DREQ | BCM_DMA_IT_PER_MAP(BCM_PWM_DMA_DREQ);
+					cb1VA->TI = BCM_DMA_TI_NO_WIDE_BURSTS | BCM_DMA_TI_WAIT_RESP | BCM_DMA_TI_DEST_DREQ | BCM_DMA_IT_PER_MAP(BCM_PCM_DMA_DREQ);
 					// Any dummy data is used and its value will have no effect
 					// We use the FIFO just to control pulse timing
 					cb1VA->SOURCE_AD = CtrlDataVA.GetChannelStepBA(channel, 0);
-					cb1VA->DEST_AD = pwmFifoBA;
+					cb1VA->DEST_AD = pcmFifoBA;
 					cb1VA->TXFR_LEN = 4;
 					cb1VA->STRIDE = 0;
 					cb1VA->NEXTCONBK = CtrlDataVA.GetChannelCbBA(channel, currCbIdx + 1);
@@ -360,12 +375,12 @@ namespace Wi2Pi
 		{
 			LogInfo("Finalizing prephirals");
 
-			WRITE_REGISTER_ULONG(&PwmReg->Control, 0);
+			WRITE_REGISTER_ULONG(&PcmReg->ControlAndStatus, 0);
 			MicroDelay(100);
 
-			(void)StopPwmClock(CmReg);
+			(void)StopPcmClock();
 
-			LogInfo("PWM controller and clock stopped");
+			LogInfo("PCM controller and clock stopped");
 
 			//
 			// Stop the DMA engines
