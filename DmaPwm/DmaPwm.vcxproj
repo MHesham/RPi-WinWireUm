@@ -240,6 +240,7 @@
     <ClInclude Include="..\Wi2Pi\bcmcm.h" />
     <ClInclude Include="..\Wi2Pi\bcmdma.h" />
     <ClInclude Include="..\Wi2Pi\bcmgpio.h" />
+    <ClInclude Include="..\Wi2Pi\bcmpcm.h" />
     <ClInclude Include="..\Wi2Pi\bcmpwm.h" />
     <ClInclude Include="..\Wi2Pi\common.h" />
     <ClInclude Include="..\Wi2Pi\d2map.h" />

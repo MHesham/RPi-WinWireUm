@@ -19,7 +19,7 @@ namespace Wi2Pi
 
 	void DbgPrintf(const wchar_t* pTxtFormat, ...)
 	{
-		const size_t LogBufferMax = 1024;
+		const size_t LogBufferMax = 2048;
 		wchar_t buffer[LogBufferMax];
 
 		va_list formatArgs;

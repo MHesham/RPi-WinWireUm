@@ -1,6 +1,7 @@
 #pragma once
 
 #include "QuadratureDecoder.h"
+#include "SwPwm.h"
 
 namespace Wi2Pi
 {
@@ -46,6 +47,8 @@ namespace Wi2Pi
 	class NxtMotor
 	{
 	public:
+		static const int PwmFrequencyHz = (int)1000;
+
 		NxtMotor(int enablePin, int hbridgeIN1Pin, int hbridgeIN2Pin, int enoderChAPin, int encoderChBPin) :
 			EnablePin(enablePin),
 			MotorDriver(hbridgeIN1Pin, hbridgeIN2Pin),
@@ -143,10 +146,7 @@ namespace Wi2Pi
 
 		void SetPower(int powerPerct)
 		{
-			if (powerPerct > 0)
-				GpioPinWrite(EnablePin, true);
-			else
-				GpioPinWrite(EnablePin, false);
+			SwPwm::Inst().SetPinDutyCycle(EnablePin, (double)powerPerct / 100.0);
 		}
 
 		int EnablePin;

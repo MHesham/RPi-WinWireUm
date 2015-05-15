@@ -181,6 +181,49 @@ void MotorRpmTestWorker()
 	LogFuncExit();
 }
 
+void MultiMotorPowerControlTest()
+{
+	NxtMotor baseMotor(BCM_GPIO17, BCM_GPIO24, BCM_GPIO25, BCM_GPIO22, BCM_GPIO23);
+	NxtMotor armMotor(BCM_GPIO16, BCM_GPIO5, BCM_GPIO6, BCM_GPIO12, BCM_GPIO13);
+
+	LogFuncEnter();
+
+	LogInfo("NXT Robot Arm Control Test");
+
+	if (!baseMotor.Init() || !armMotor.Init())
+	{
+		LogInfo("Failed to init NXT motor");
+		goto Exit;
+	}
+
+	for (int i = 0; !Fx::Inst().Inst().GlobalShutdownFlag && i <= 100; i+=10)
+	{
+		LogInfo("Base Forward @%d Arm Backward @%d", i, i);
+
+		baseMotor.Forward(i);
+		armMotor.Forward(i);
+
+		Sleep(2000);
+	}
+
+	for (int i = 0; !Fx::Inst().Inst().GlobalShutdownFlag && i <= 100; i+=10)
+	{
+		LogInfo("Base Backward @%d Arm Backward @%d", 100 - i, 100 - i);
+
+		baseMotor.Backward(100 - i);
+		armMotor.Backward(100 - i);
+
+		Sleep(2000);
+	}
+
+Exit:
+
+	baseMotor.Deinit();
+	armMotor.Deinit();
+
+	LogFuncExit();
+}
+
 void MotorDegreeTestWorker()
 {
 	LogFuncEnter();
@@ -224,26 +267,25 @@ void MotorDegreeTestWorker()
 
 int __cdecl wmain()
 {
-	/*cout << "sizeof(ULONG)=" << sizeof(ULONG) << endl;
-	cout << "sizeof(BCM_DMA_CB)=" << sizeof(BCM_DMA_CB) << endl;
-	cout << "sizeof(SwServoPwmControlData::CB)=" << sizeof(SwServoPwmControlData::CB) << endl;
-	cout << "sizeof(SwServoPwmControlData::Step)=" << sizeof(SwServoPwmControlData::Step) << endl;
-	cout << "sizeof(SwServoPwmControlData)=" << sizeof(SwServoPwmControlData) << endl;
-
-	return 0;*/
-
 	if (!Fx::Inst().Init())
 	{
 		LogInfo("Failed to init WinWiringPi lib");
 		return -1;
 	}
 
+	int pwmPins[] = { BCM_GPIO16, BCM_GPIO17 };
+	if (!SwPwm::Inst().Init(pwmPins, ARRAYSIZE(pwmPins), NxtMotor::PwmFrequencyHz))
+	{
+		LogError("Failed to init software PWM");
+		return -1;
+	}
 
 	cout << "\nNXT Motor Test" << endl;
 	cout << "  C|c: Command control Test" << endl;
 	cout << "  D|d: Rotation in degrees test" << endl;
 	cout << "  R|r: RPM measurement test" << endl;
 	cout << "  A|a: NXT robot arm control test" << endl;
+	cout << "  P|p: Multi motor power control test" << endl;
 
 	char cmd;
 	cout << ">";
@@ -281,6 +323,15 @@ int __cdecl wmain()
 		system("pause");
 		Fx::Inst().Deinit();
 		motorThread.join();
+		break;
+
+	case 'P':
+	case 'p':
+		motorThread = std::thread(MultiMotorPowerControlTest);
+		system("pause");
+		Fx::Inst().Deinit();
+		motorThread.join();
+		break;
 
 	default:
 		LogInfo("Unknown command %c", cmd);

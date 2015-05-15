@@ -26,25 +26,21 @@ void PwmTestWorker()
 
 int __cdecl wmain()
 {
-	/*cout << "sizeof(ULONG)=" << sizeof(ULONG) << endl;
-	cout << "sizeof(BCM_DMA_CB)=" << sizeof(BCM_DMA_CB) << endl;
-	cout << "sizeof(SwServoPwmControlData::CB)=" << sizeof(SwServoPwmControlData::CB) << endl;
-	cout << "sizeof(SwServoPwmControlData::Step)=" << sizeof(SwServoPwmControlData::Step) << endl;
-	cout << "sizeof(SwServoPwmControlData)=" << sizeof(SwServoPwmControlData) << endl;
-
-	return 0;*/
-
 	if (!Fx::Inst().Init())
 	{
 		LogInfo("Failed to init WinWiringPi lib");
 		return -1;
 	}
 
-
 	LogInfo("Initializing software PWM");
 
+	double pwmFreqHz = 0.0;
+
+	cout << "PWM Freq (Hz): ";
+	cin >> pwmFreqHz;
+
 	int pwmPins[] = { BCM_GPIO16, BCM_GPIO17 };
-	if (!SwPwm::Inst().Init(pwmPins, ARRAYSIZE(pwmPins), PWM_DEFAULT_FREQ_HZ))
+	if (!SwPwm::Inst().Init(pwmPins, ARRAYSIZE(pwmPins), pwmFreqHz))
 	{
 		LogError("Failed to init software PWM");
 		return -1;

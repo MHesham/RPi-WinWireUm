@@ -47,6 +47,9 @@
     <ClInclude Include="..\Wi2Pi\MMap.h">
       <Filter>Wi2Pi</Filter>
     </ClInclude>
+    <ClInclude Include="..\Wi2Pi\bcmpcm.h">
+      <Filter>Wi2Pi</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
