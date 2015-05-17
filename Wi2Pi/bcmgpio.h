@@ -12,10 +12,8 @@
 #define BCM_GPIO_REG_LEN			0x100
 
 #define BCM_GPIO_FSEL_LENGTH		6
-#define BCM_GPIO_SET_LENGTH			2
-#define BCM_GPIO_CLR_LENGTH			2
-#define BCM_GPIO_LEV_LENGTH			2
 
+#define BCM_GPIO_NUM_BANKS			2
 #define BCM_GPIO_BANK0_NUM_PINS		32
 
 namespace Wi2Pi
@@ -23,13 +21,32 @@ namespace Wi2Pi
 #include <pshpack4.h>
 	typedef struct _BCM_GPIO_REGISTERS
 	{
-		ULONG FuncSelect[BCM_GPIO_FSEL_LENGTH];			// GPFSEL0-5
-		ULONG Reserved0;
-		ULONG Set[BCM_GPIO_SET_LENGTH];					// GPSET0-1
+		ULONG FuncSelect[BCM_GPIO_FSEL_LENGTH];					// GPFSEL0-5
+		ULONG Reserved0;	
+		ULONG Set[BCM_GPIO_NUM_BANKS];							// GPSET0-1
 		ULONG Reserved1;
-		ULONG Clear[BCM_GPIO_CLR_LENGTH];				// GPCLR0-1
+		ULONG Clear[BCM_GPIO_NUM_BANKS];						// GPCLR0-1
 		ULONG Reserved2;
-		ULONG Level[BCM_GPIO_LEV_LENGTH];				// GPLEV0-1
+		ULONG Level[BCM_GPIO_NUM_BANKS];						// GPLEV0-1
+		ULONG Reserved3;
+		ULONG EventDetectStatus[BCM_GPIO_NUM_BANKS];			// GPEDS0-1
+		ULONG Reserved4;
+		ULONG RisingEdgeDetectEnable[BCM_GPIO_NUM_BANKS];		// GPREN0-1
+		ULONG Reserved5;
+		ULONG FallingEdgeDetectEnable[BCM_GPIO_NUM_BANKS];		// GPFEN0-1
+		ULONG Reserved6;
+		ULONG HighDetectEnable[BCM_GPIO_NUM_BANKS];				// GPHEN0-1
+		ULONG Reserved7;
+		ULONG LowDetectEnable[BCM_GPIO_NUM_BANKS];				// GPLEN0-1
+		ULONG Reserved8;
+		ULONG AsyncRisingEdgeDetectEnable[BCM_GPIO_NUM_BANKS];	// GPAREN0-1
+		ULONG Reserved9;
+		ULONG AsyncFallingEdgeDetectEnable[BCM_GPIO_NUM_BANKS];	// GPAFEN0-1
+		ULONG Reserved10;
+		ULONG PullupPulldownEnable;								// GPPUD
+		ULONG PullupPulldownEnableClock[BCM_GPIO_NUM_BANKS];	// GPPUDCLK0-1
+		ULONG Reserved12;
+		ULONG Reserved13;
 
 	} BCM_GPIO_REGISTERS, *PBCM_GPIO_REGISTERS;
 #include <poppack.h>
@@ -49,6 +66,7 @@ namespace Wi2Pi
 		BCM_GPIO23 = 23,	// P1-16
 		BCM_GPIO24 = 24,	// P1-18
 		BCM_GPIO25 = 25,	// P1-22
+		BCM_GPIO26 = 26,	// P1-37
 	};
 
 	enum BCM_GPIO_FSEL
@@ -61,6 +79,13 @@ namespace Wi2Pi
 		BCM_GPIO_FSEL_Alt3,
 		BCM_GPIO_FSEL_Alt4 = 0x3,
 		BCM_GPIO_FSEL_Alt5 = 0x2,
+	};
+
+	enum BCM_GPIO_PULL
+	{
+		BCM_GPIO_NOPULL = 0x0,
+		BCM_GPIO_PULLDOWN = 0x1,
+		BCM_GPIO_PULLUP = 0x2,
 	};
 
 	static PBCM_GPIO_REGISTERS GpioReg;
@@ -88,6 +113,22 @@ namespace Wi2Pi
 		fsel |= func << numShifts;
 
 		WRITE_REGISTER_ULONG(GpioReg->FuncSelect + nFsel, fsel);
+	}
+
+	__inline void GpioPinSetPull(int pinNum, BCM_GPIO_PULL pull)
+	{
+		// Each reg controls 32 GPIO pin
+		_ASSERT(pinNum < 32 && pinNum > 0 && "Pin number should be in the range [0,31]");
+
+		// At least wait 150 cycles per data-sheet
+		WRITE_REGISTER_NOFENCE_ULONG(&GpioReg->PullupPulldownEnable, pull);
+		MicroDelay(1);
+
+		WRITE_REGISTER_NOFENCE_ULONG(GpioReg->PullupPulldownEnableClock, 1 << pinNum);
+		MicroDelay(1);
+
+		WRITE_REGISTER_NOFENCE_ULONG(&GpioReg->PullupPulldownEnable, 0);
+		WRITE_REGISTER_NOFENCE_ULONG(GpioReg->PullupPulldownEnableClock, 0);
 	}
 
 	__inline void GpioPinWrite(int pinNum, bool state)
