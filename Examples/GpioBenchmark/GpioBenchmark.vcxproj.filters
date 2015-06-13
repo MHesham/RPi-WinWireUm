@@ -1,0 +1,64 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="..\..\WinWire\common.h">
+      <Filter>WinWire</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\WinWire\HpcTimer.h">
+      <Filter>WinWire</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\WinWire\MMap.h">
+      <Filter>WinWire</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\WinWire\regaccess.h">
+      <Filter>WinWire</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\WinWire\WinWireKm.h">
+      <Filter>WinWire</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\WinWire\RPi2\bcm.h">
+      <Filter>WinWire\RPi2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\WinWire\RPi2\bcmcm.h">
+      <Filter>WinWire\RPi2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\WinWire\RPi2\bcmdma.h">
+      <Filter>WinWire\RPi2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\WinWire\RPi2\bcmgpio.h">
+      <Filter>WinWire\RPi2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\WinWire\RPi2\bcmpcm.h">
+      <Filter>WinWire\RPi2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\WinWire\RPi2\bcmpwm.h">
+      <Filter>WinWire\RPi2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\WinWire\RPi2\NxtMotor.h">
+      <Filter>WinWire\RPi2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\WinWire\RPi2\QuadratureDecoder.h">
+      <Filter>WinWire\RPi2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\WinWire\RPi2\SwPwm.h">
+      <Filter>WinWire\RPi2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\WinWire\RPi2\SwServoPwm.h">
+      <Filter>WinWire\RPi2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\WinWire\RPi2\Fx.h">
+      <Filter>WinWire\RPi2</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="WinWire">
+      <UniqueIdentifier>{2f6582b0-8fff-4bb9-b93c-963dc2c8b679}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="WinWire\RPi2">
+      <UniqueIdentifier>{c923f6a6-4cee-4389-b463-a91d4ff5bf5d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

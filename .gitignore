@@ -43,3 +43,5 @@
 *.opensdf
 *.idb
 *.ilk
+*.suo
+*.sdf
