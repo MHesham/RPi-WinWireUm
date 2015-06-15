@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include "MMap.h"
+#include "FxKm.h"
 
 namespace WinWire {
 	namespace RPi2
@@ -312,13 +312,13 @@ namespace WinWire {
 			{
 				LogInfo("Creating and initializing DMA control blocks");
 
-				auto res = MMap::Inst().AllocMap(ControlDataAlignedLength);
+				auto res = FxKm::Inst().AllocMap(ControlDataAlignedLength);
 				CtrlDataVA.PA = res.PhysicalAddress;
 				CtrlDataVA.Base = (PBYTE)res.UserAddress;
 
 				if (CtrlDataVA.Base == NULL)
 				{
-					LogError("MMap::AllocMap failed");
+					LogError("FxKm::AllocMap failed");
 					return false;
 				}
 

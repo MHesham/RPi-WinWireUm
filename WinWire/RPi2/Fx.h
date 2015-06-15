@@ -17,7 +17,7 @@
 #pragma once
 
 #include "common.h"
-#include "MMap.h"
+#include "FxKm.h"
 #include "regaccess.h"
 #include "RPi2\bcmdma.h"
 #include "RPi2\bcmpwm.h"
@@ -41,51 +41,51 @@ namespace WinWire {
 
 			bool MapPrephirals()
 			{
-				PwmReg = (PBCM_PWM_REGISTERS)MMap::Inst().Map((PVOID)BCM_PWM_CPU_BASE, BCM_PWM_REG_LEN).UserAddress;
+				PwmReg = (PBCM_PWM_REGISTERS)FxKm::Inst().Map((PVOID)BCM_PWM_CPU_BASE, BCM_PWM_REG_LEN).UserAddress;
 
 				if (!PwmReg)
 				{
-					LogError("D2Map::MMap PWM registers failed");
+					LogError("Map PWM registers failed");
 					return false;
 				}
 
 				LogInfo("PWM Direct Access Acquired @VA:0x%08x @PA:0x%08x @BA:0x%08x", PwmReg, BCM_PWM_CPU_BASE, BCM_CPU_TO_BUS_PERIPH_ADDR(BCM_PWM_CPU_BASE));
 
-				PcmReg = (PBCM_PCM_REGISTERS)MMap::Inst().Map((PVOID)BCM_PCM_CPU_BASE, BCM_PCM_REG_LEN).UserAddress;
+				PcmReg = (PBCM_PCM_REGISTERS)FxKm::Inst().Map((PVOID)BCM_PCM_CPU_BASE, BCM_PCM_REG_LEN).UserAddress;
 
 				if (!PcmReg)
 				{
-					LogError("D2Map::MMap PCM registers failed");
+					LogError("Map PCM registers failed");
 					return false;
 				}
 
 				LogInfo("PCM Direct Access Acquired @VA:0x%08x @PA:0x%08x @BA:0x%08x", PcmReg, BCM_PCM_CPU_BASE, BCM_CPU_TO_BUS_PERIPH_ADDR(BCM_PCM_CPU_BASE));
 
-				GpioReg = (PBCM_GPIO_REGISTERS)MMap::Inst().Map((PVOID)BCM_GPIO_CPU_BASE, BCM_GPIO_REG_LEN).UserAddress;
+				GpioReg = (PBCM_GPIO_REGISTERS)FxKm::Inst().Map((PVOID)BCM_GPIO_CPU_BASE, BCM_GPIO_REG_LEN).UserAddress;
 
 				if (!GpioReg)
 				{
-					LogError("D2Map::MMap GPIO registers failed");
+					LogError("Map GPIO registers failed");
 					return false;
 				}
 
 				LogInfo("GPIO Direct Access Acquired @VA:0x%08x @PA:0x%08x @BA:0x%08x", GpioReg, BCM_GPIO_CPU_BASE, BCM_CPU_TO_BUS_PERIPH_ADDR(BCM_GPIO_CPU_BASE));
 
-				DmaReg = (PBCM_DMA_REGISTERS)MMap::Inst().Map((PVOID)BCM_DMA_CPU_BASE, BCM_DMA_REG_LEN).UserAddress;
+				DmaReg = (PBCM_DMA_REGISTERS)FxKm::Inst().Map((PVOID)BCM_DMA_CPU_BASE, BCM_DMA_REG_LEN).UserAddress;
 
 				if (!DmaReg)
 				{
-					LogError("D2Map::MMap DMA registers failed");
+					LogError("Map DMA registers failed");
 					return false;
 				}
 
 				LogInfo("DMA Direct Access Acquired @VA:0x%08x @PA:0x%08x @BA:0x%08x", DmaReg, BCM_DMA_CPU_BASE, BCM_CPU_TO_BUS_PERIPH_ADDR(BCM_DMA_CPU_BASE));
 
-				CmReg = (PBCM_CM_REGISTERS)MMap::Inst().Map((PVOID)BCM_CM_CPU_BASE, BCM_CM_REG_LEN).UserAddress;
+				CmReg = (PBCM_CM_REGISTERS)FxKm::Inst().Map((PVOID)BCM_CM_CPU_BASE, BCM_CM_REG_LEN).UserAddress;
 
 				if (!CmReg)
 				{
-					LogError("D2Map::MMap CM registers failed");
+					LogError("Map CM registers failed");
 					return false;
 				}
 
@@ -143,7 +143,7 @@ namespace WinWire {
 
 				for (int i = 0; i < ArrowNumSamples; ++i)
 				{
-					ArrowResult currRes = MMap::Inst().Arrow();
+					ArrowResult currRes = FxKm::Inst().Arrow();
 
 					LogVerbose(
 						"Sample%d: User->Kernel=%lldus, Kernel->User=%lldus",

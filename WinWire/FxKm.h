@@ -33,34 +33,34 @@ namespace WinWire
 		LONGLONG ThrowBackTimeUs;
 	};
 
-	class MMap
+	class FxKm
 	{
 	public:
 
-		~MMap()
+		~FxKm()
 		{
-			if (hD2Map != INVALID_HANDLE_VALUE)
+			if (hWinWireKm != INVALID_HANDLE_VALUE)
 			{
-				CloseHandle(hD2Map);
+				CloseHandle(hWinWireKm);
 			}
 		}
 
-		static MMap& Inst()
+		static FxKm& Inst()
 		{
-			static MMap inst;
+			static FxKm inst;
 			return inst;
 		}
 
 		MMapResult AllocMap(ULONG length)
 		{
-			LogVerbose("MMap::AllocMap physicalAddress=0x%08x length=%x", nullptr, length);
+			LogVerbose("FxKm::AllocMap physicalAddress=0x%08x length=%x", nullptr, length);
 
 			return MMapInternal(nullptr, length);
 		}
 
 		MMapResult Map(PVOID physicalAddress, ULONG length)
 		{
-			LogVerbose("MMap::Map physicalAddress=0x%08x length=%x", physicalAddress, length);
+			LogVerbose("FxKm::Map physicalAddress=0x%08x length=%x", physicalAddress, length);
 
 			return MMapInternal(physicalAddress, length);
 		}
@@ -72,7 +72,7 @@ namespace WinWire
 			res.ThrowTimeUs = 0;
 			res.ThrowBackTimeUs = 0;
 
-			D2MAP_ARROW_OUTPUT_BUFFER dmapOutputBuffer;
+			WINWIREKM_ARROW_OUTPUT_BUFFER ob;
 			LARGE_INTEGER throwStartTick;
 			LARGE_INTEGER throwBackEndTick;
 			DWORD bytesReturned;
@@ -81,11 +81,11 @@ namespace WinWire
 
 			if (!DeviceIoControl(
 				GetHandle(),
-				IOCTL_D2MAP_ARROW,
+				IOCTL_WINWIREKM_ARROW,
 				NULL,
 				0,
-				&dmapOutputBuffer,
-				sizeof(dmapOutputBuffer),
+				&ob,
+				sizeof(ob),
 				&bytesReturned,
 				nullptr))
 			{
@@ -95,40 +95,40 @@ namespace WinWire
 
 			(void)QueryPerformanceCounter(&throwBackEndTick);
 
-			res.ThrowTimeUs = ((dmapOutputBuffer.HitTime.QuadPart - throwStartTick.QuadPart) * 1000000) / HpcFreq.QuadPart;
-			res.ThrowBackTimeUs = ((throwBackEndTick.QuadPart - dmapOutputBuffer.ThrowBackTime.QuadPart) * 1000000) / HpcFreq.QuadPart;
+			res.ThrowTimeUs = ((ob.HitTime.QuadPart - throwStartTick.QuadPart) * 1000000) / HpcFreq.QuadPart;
+			res.ThrowBackTimeUs = ((throwBackEndTick.QuadPart - ob.ThrowBackTime.QuadPart) * 1000000) / HpcFreq.QuadPart;
 
 			return res;
 		}
 
 	private:
 
-		MMap() :
-			hD2Map(INVALID_HANDLE_VALUE)
+		FxKm() :
+			hWinWireKm(INVALID_HANDLE_VALUE)
 		{}
 
 		MMapResult MMapInternal(PVOID physicalAddress, ULONG length)
 		{
-			LogVerbose("MMap::MMapInternal physicalAddress=0x%08x length=%x", physicalAddress, length);
+			LogVerbose("FxKm::MMapInternal physicalAddress=0x%08x length=%x", physicalAddress, length);
 
 			MMapResult res;
 			res.PhysicalAddress = 0;
 			res.UserAddress = nullptr;
 
-			D2MAP_MMAP_INPUT_BUFFER dmapInputBuffer;
-			D2MAP_MMAP_OUTPUT_BUFFER dmapOutputBuffer;
+			WINWIREKM_MMAP_INPUT_BUFFER ib;
+			WINWIREKM_MMAP_OUTPUT_BUFFER ob;
 
-			dmapInputBuffer.PhysicalAddress = physicalAddress;
-			dmapInputBuffer.Length = length;
+			ib.PhysicalAddress = physicalAddress;
+			ib.Length = length;
 
 			DWORD bytesReturned;
 			if (!DeviceIoControl(
 				GetHandle(),
-				IOCTL_D2MAP_MMAP,
-				&dmapInputBuffer,
-				sizeof(dmapInputBuffer),
-				&dmapOutputBuffer,
-				sizeof(dmapOutputBuffer),
+				IOCTL_WINWIREKM_MMAP,
+				&ib,
+				sizeof(ib),
+				&ob,
+				sizeof(ob),
 				&bytesReturned,
 				nullptr))
 			{
@@ -136,18 +136,18 @@ namespace WinWire
 				return res;
 			}
 
-			res.PhysicalAddress = (ULONG)dmapOutputBuffer.PhysicalAddress;
-			res.UserAddress = dmapOutputBuffer.UserAddress;
+			res.PhysicalAddress = (ULONG)ob.PhysicalAddress;
+			res.UserAddress = ob.UserAddress;
 
 			return res;
 		}
 
 		HANDLE GetHandle()
 		{
-			if (hD2Map == INVALID_HANDLE_VALUE)
+			if (hWinWireKm == INVALID_HANDLE_VALUE)
 			{
-				hD2Map = CreateFile(
-					D2MAP_USER_PATH,
+				hWinWireKm = CreateFile(
+					WINWIREKM_USER_PATH,
 					GENERIC_WRITE | GENERIC_READ,
 					0,      // exclusive
 					NULL,
@@ -155,16 +155,16 @@ namespace WinWire
 					FILE_ATTRIBUTE_NORMAL,
 					NULL);
 
-				if (hD2Map == INVALID_HANDLE_VALUE)
+				if (hWinWireKm == INVALID_HANDLE_VALUE)
 				{
 					LogError("CreateFile failed, Error=%d", GetLastError());
 					return NULL;
 				}
 			}
 
-			return hD2Map;
+			return hWinWireKm;
 		}
 
-		HANDLE hD2Map;
+		HANDLE hWinWireKm;
 	};
 }

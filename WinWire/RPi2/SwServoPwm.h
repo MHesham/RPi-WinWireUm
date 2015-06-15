@@ -307,13 +307,13 @@ namespace WinWire {
 			{
 				LogInfo("Creating and initializing DMA control blocks");
 
-				auto res = MMap::Inst().AllocMap(ControlDataLength);
+				auto res = FxKm::Inst().AllocMap(ControlDataLength);
 				CtrlDataPA = res.PhysicalAddress;
 				CtrlDataVA = (PSwServoPwmControlData)res.UserAddress;
 
 				if (CtrlDataVA == NULL)
 				{
-					LogError("D2MAP::AllocMap failed");
+					LogError("AllocMap failed");
 					return false;
 				}
 

@@ -95,7 +95,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\WinWire\common.h" />
     <ClInclude Include="..\..\WinWire\HpcTimer.h" />
-    <ClInclude Include="..\..\WinWire\MMap.h" />
+    <ClInclude Include="..\..\WinWire\FxKm.h" />
     <ClInclude Include="..\..\WinWire\regaccess.h" />
     <ClInclude Include="..\..\WinWire\RPi2\bcm.h" />
     <ClInclude Include="..\..\WinWire\RPi2\bcmcm.h" />

@@ -7,9 +7,6 @@
     <ClInclude Include="..\..\WinWire\HpcTimer.h">
       <Filter>WinWire</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\WinWire\MMap.h">
-      <Filter>WinWire</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\WinWire\regaccess.h">
       <Filter>WinWire</Filter>
     </ClInclude>
@@ -48,6 +45,9 @@
     </ClInclude>
     <ClInclude Include="..\..\WinWire\RPi2\Fx.h">
       <Filter>WinWire\RPi2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\WinWire\FxKm.h">
+      <Filter>WinWire</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
