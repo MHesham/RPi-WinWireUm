@@ -1,18 +1,18 @@
-/*
-	Copyright 2015 Muhamad Lotfy
-
-	Licensed under the Apache License, Version 2.0 (the "License");
-	you may not use this file except in compliance with the License.
-	You may obtain a copy of the License at
-
-	http://www.apache.org/licenses/LICENSE-2.0
-
-	Unless required by applicable law or agreed to in writing, software
-	distributed under the License is distributed on an "AS IS" BASIS,
-	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-	See the License for the specific language governing permissions and
-	limitations under the License.
-*/
+//
+// Copyright 2015 Muhamad Lotfy
+// 
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+// http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #pragma once
 
@@ -56,133 +56,133 @@
 #define BCM_DMA_TI_NO_WIDE_BURSTS	(1<<26)
 
 namespace WinWire {
-	namespace RPi2
-	{
+    namespace RPi2
+    {
 #include <pshpack4.h>
-		typedef struct _BCM_DMA_CH_REGISTERS
-		{
-			ULONG ControlAndStatus;
-			ULONG ControlBlockAddr;
-			ULONG CB[BCM_DMA_REG_CB_LEN];
-			ULONG Debug;
-			ULONG Pad[BCM_DMA_REG_PAD_LEN];
-		} BCM_DMA_CH_REGISTERS, *PBCM_DMA_CH_REGISTERS;
+        typedef struct _BCM_DMA_CH_REGISTERS
+        {
+            ULONG ControlAndStatus;
+            ULONG ControlBlockAddr;
+            ULONG CB[BCM_DMA_REG_CB_LEN];
+            ULONG Debug;
+            ULONG Pad[BCM_DMA_REG_PAD_LEN];
+        } BCM_DMA_CH_REGISTERS, *PBCM_DMA_CH_REGISTERS;
 
-		typedef struct _BCM_DMA_REGISTERS
-		{
-			ULONG Ch0ControlAndStatus;
-			ULONG Ch0ControlBlockAddr;
-			ULONG CH0CB[BCM_DMA_REG_CB_LEN];
-			ULONG Ch0Debug;
-			ULONG CH0Pad[BCM_DMA_REG_PAD_LEN];
-			ULONG Ch1ControlAndStatus;
-			ULONG Ch1ControlBlockAddr;
-			ULONG CH1CB[BCM_DMA_REG_CB_LEN];
-			ULONG Ch1Debug;
-			ULONG CH1Pad[BCM_DMA_REG_PAD_LEN];
-			ULONG Ch2ControlAndStatus;
-			ULONG Ch2ControlBlockAddr;
-			ULONG CH2CB[BCM_DMA_REG_CB_LEN];
-			ULONG Ch2Debug;
-			ULONG CH2Pad[BCM_DMA_REG_PAD_LEN];
-			ULONG Ch3ControlAndStatus;
-			ULONG Ch3ControlBlockAddr;
-			ULONG CH3CB[BCM_DMA_REG_CB_LEN];
-			ULONG Ch3Debug;
-			ULONG CH3Pad[BCM_DMA_REG_PAD_LEN];
-			ULONG Ch4ControlAndStatus;
-			ULONG Ch4ControlBlockAddr;
-			ULONG CH4CB[BCM_DMA_REG_CB_LEN];
-			ULONG Ch4Debug;
-			ULONG CH4Pad[BCM_DMA_REG_PAD_LEN];
-			ULONG Ch5ControlAndStatus;
-			ULONG Ch5ControlBlockAddr;
-			ULONG CH5CB[BCM_DMA_REG_CB_LEN];
-			ULONG Ch5Debug;
-			ULONG CH5Pad[BCM_DMA_REG_PAD_LEN];
-			ULONG Ch6ControlAndStatus;
-			ULONG Ch6ControlBlockAddr;
-			ULONG CH6CB[BCM_DMA_REG_CB_LEN];
-			ULONG Ch6Debug;
-			ULONG CH6Pad[BCM_DMA_REG_PAD_LEN];
-			ULONG Ch7ControlAndStatus;
-			ULONG Ch7ControlBlockAddr;
-			ULONG CH7CB[BCM_DMA_REG_CB_LEN];
-			ULONG Ch7Debug;
-			ULONG CH7Pad[BCM_DMA_REG_PAD_LEN];
-			ULONG Ch8ControlAndStatus;
-			ULONG Ch8ControlBlockAddr;
-			ULONG CH8CB[BCM_DMA_REG_CB_LEN];
-			ULONG Ch8Debug;
-			ULONG CH8Pad[BCM_DMA_REG_PAD_LEN];
-			ULONG Ch9ControlAndStatus;
-			ULONG Ch9ControlBlockAddr;
-			ULONG CH9CB[BCM_DMA_REG_CB_LEN];
-			ULONG Ch9Debug;
-			ULONG CH9Pad[BCM_DMA_REG_PAD_LEN];
-			ULONG Ch10ControlAndStatus;
-			ULONG Ch10ControlBlockAddr;
-			ULONG CH10CB[BCM_DMA_REG_CB_LEN];
-			ULONG Ch10Debug;
-			ULONG CH10Pad[BCM_DMA_REG_PAD_LEN];
-			ULONG Ch11ControlAndStatus;
-			ULONG Ch11ControlBlockAddr;
-			ULONG CH11CB[BCM_DMA_REG_CB_LEN];
-			ULONG Ch11Debug;
-			ULONG CH11Pad[BCM_DMA_REG_PAD_LEN];
-			ULONG Ch12ControlAndStatus;
-			ULONG Ch12ControlBlockAddr;
-			ULONG CH12CB[BCM_DMA_REG_CB_LEN];
-			ULONG Ch12Debug;
-			ULONG CH12Pad[BCM_DMA_REG_PAD_LEN];
-			ULONG Ch13ControlAndStatus;
-			ULONG Ch13ControlBlockAddr;
-			ULONG CH13CB[BCM_DMA_REG_CB_LEN];
-			ULONG Ch13Debug;
-			ULONG CH13Pad[BCM_DMA_REG_PAD_LEN];
-			ULONG Ch14ControlAndStatus;
-			ULONG Ch14ControlBlockAddr;
-			ULONG CH14CB[BCM_DMA_REG_CB_LEN];
-			ULONG Ch14Debug;
-			ULONG CH14Pad[BCM_DMA_REG_PAD_LEN];
-			ULONG Pad0[56];
-			ULONG InterruptStatus;
-			ULONG Pad1[3];
-			ULONG Enable;
+        typedef struct _BCM_DMA_REGISTERS
+        {
+            ULONG Ch0ControlAndStatus;
+            ULONG Ch0ControlBlockAddr;
+            ULONG CH0CB[BCM_DMA_REG_CB_LEN];
+            ULONG Ch0Debug;
+            ULONG CH0Pad[BCM_DMA_REG_PAD_LEN];
+            ULONG Ch1ControlAndStatus;
+            ULONG Ch1ControlBlockAddr;
+            ULONG CH1CB[BCM_DMA_REG_CB_LEN];
+            ULONG Ch1Debug;
+            ULONG CH1Pad[BCM_DMA_REG_PAD_LEN];
+            ULONG Ch2ControlAndStatus;
+            ULONG Ch2ControlBlockAddr;
+            ULONG CH2CB[BCM_DMA_REG_CB_LEN];
+            ULONG Ch2Debug;
+            ULONG CH2Pad[BCM_DMA_REG_PAD_LEN];
+            ULONG Ch3ControlAndStatus;
+            ULONG Ch3ControlBlockAddr;
+            ULONG CH3CB[BCM_DMA_REG_CB_LEN];
+            ULONG Ch3Debug;
+            ULONG CH3Pad[BCM_DMA_REG_PAD_LEN];
+            ULONG Ch4ControlAndStatus;
+            ULONG Ch4ControlBlockAddr;
+            ULONG CH4CB[BCM_DMA_REG_CB_LEN];
+            ULONG Ch4Debug;
+            ULONG CH4Pad[BCM_DMA_REG_PAD_LEN];
+            ULONG Ch5ControlAndStatus;
+            ULONG Ch5ControlBlockAddr;
+            ULONG CH5CB[BCM_DMA_REG_CB_LEN];
+            ULONG Ch5Debug;
+            ULONG CH5Pad[BCM_DMA_REG_PAD_LEN];
+            ULONG Ch6ControlAndStatus;
+            ULONG Ch6ControlBlockAddr;
+            ULONG CH6CB[BCM_DMA_REG_CB_LEN];
+            ULONG Ch6Debug;
+            ULONG CH6Pad[BCM_DMA_REG_PAD_LEN];
+            ULONG Ch7ControlAndStatus;
+            ULONG Ch7ControlBlockAddr;
+            ULONG CH7CB[BCM_DMA_REG_CB_LEN];
+            ULONG Ch7Debug;
+            ULONG CH7Pad[BCM_DMA_REG_PAD_LEN];
+            ULONG Ch8ControlAndStatus;
+            ULONG Ch8ControlBlockAddr;
+            ULONG CH8CB[BCM_DMA_REG_CB_LEN];
+            ULONG Ch8Debug;
+            ULONG CH8Pad[BCM_DMA_REG_PAD_LEN];
+            ULONG Ch9ControlAndStatus;
+            ULONG Ch9ControlBlockAddr;
+            ULONG CH9CB[BCM_DMA_REG_CB_LEN];
+            ULONG Ch9Debug;
+            ULONG CH9Pad[BCM_DMA_REG_PAD_LEN];
+            ULONG Ch10ControlAndStatus;
+            ULONG Ch10ControlBlockAddr;
+            ULONG CH10CB[BCM_DMA_REG_CB_LEN];
+            ULONG Ch10Debug;
+            ULONG CH10Pad[BCM_DMA_REG_PAD_LEN];
+            ULONG Ch11ControlAndStatus;
+            ULONG Ch11ControlBlockAddr;
+            ULONG CH11CB[BCM_DMA_REG_CB_LEN];
+            ULONG Ch11Debug;
+            ULONG CH11Pad[BCM_DMA_REG_PAD_LEN];
+            ULONG Ch12ControlAndStatus;
+            ULONG Ch12ControlBlockAddr;
+            ULONG CH12CB[BCM_DMA_REG_CB_LEN];
+            ULONG Ch12Debug;
+            ULONG CH12Pad[BCM_DMA_REG_PAD_LEN];
+            ULONG Ch13ControlAndStatus;
+            ULONG Ch13ControlBlockAddr;
+            ULONG CH13CB[BCM_DMA_REG_CB_LEN];
+            ULONG Ch13Debug;
+            ULONG CH13Pad[BCM_DMA_REG_PAD_LEN];
+            ULONG Ch14ControlAndStatus;
+            ULONG Ch14ControlBlockAddr;
+            ULONG CH14CB[BCM_DMA_REG_CB_LEN];
+            ULONG Ch14Debug;
+            ULONG CH14Pad[BCM_DMA_REG_PAD_LEN];
+            ULONG Pad0[56];
+            ULONG InterruptStatus;
+            ULONG Pad1[3];
+            ULONG Enable;
 
-		} BCM_DMA_REGISTERS, *PBCM_DMA_REGISTERS;
+        } BCM_DMA_REGISTERS, *PBCM_DMA_REGISTERS;
 
 #include <poppack.h>
-		//
-		// DMA Control Block (needs to be 256bit aligned)
-		//
+        //
+        // DMA Control Block (needs to be 256bit aligned)
+        //
 
-		typedef struct _BCM_DMA_CB
-		{
-			__declspec(align(32)) ULONG TI;
-			ULONG SOURCE_AD;
-			ULONG DEST_AD;
-			ULONG TXFR_LEN;
-			ULONG STRIDE;
-			ULONG NEXTCONBK;
-			ULONG RSVD0;
-			ULONG RSVD1;
-		} BCM_DMA_CB, *PBCM_DMA_CB;
+        typedef struct _BCM_DMA_CB
+        {
+            __declspec(align(32)) ULONG TI;
+            ULONG SOURCE_AD;
+            ULONG DEST_AD;
+            ULONG TXFR_LEN;
+            ULONG STRIDE;
+            ULONG NEXTCONBK;
+            ULONG RSVD0;
+            ULONG RSVD1;
+        } BCM_DMA_CB, *PBCM_DMA_CB;
 
-		static PBCM_DMA_REGISTERS DmaReg;
+        static PBCM_DMA_REGISTERS DmaReg;
 
-		void DumpDmaRegisters()
-		{
-			LogInfo(
-				"\nDumping DMA Registers\n"
-				"    Enable =                   0x%08x\n"
-				"    CH14 Control And Status =  0x%08x\n"
-				"    CH14 Control Block Addr =  0x%08x\n"
-				"    CH14 Debug =               0x%08x\n",
-				READ_REGISTER_ULONG(&DmaReg->Enable),
-				READ_REGISTER_ULONG(&DmaReg->Ch14ControlAndStatus),
-				READ_REGISTER_ULONG(&DmaReg->Ch14ControlBlockAddr),
-				READ_REGISTER_ULONG(&DmaReg->Ch14Debug));
-		}
-	}
+        void DumpDmaRegisters()
+        {
+            LogInfo(
+                "\nDumping DMA Registers\n"
+                "    Enable =                   0x%08x\n"
+                "    CH14 Control And Status =  0x%08x\n"
+                "    CH14 Control Block Addr =  0x%08x\n"
+                "    CH14 Debug =               0x%08x\n",
+                READ_REGISTER_ULONG(&DmaReg->Enable),
+                READ_REGISTER_ULONG(&DmaReg->Ch14ControlAndStatus),
+                READ_REGISTER_ULONG(&DmaReg->Ch14ControlBlockAddr),
+                READ_REGISTER_ULONG(&DmaReg->Ch14Debug));
+        }
+    }
 }

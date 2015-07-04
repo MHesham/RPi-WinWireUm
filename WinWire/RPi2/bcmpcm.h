@@ -1,18 +1,18 @@
-/*
-	Copyright 2015 Muhamad Lotfy
-
-	Licensed under the Apache License, Version 2.0 (the "License");
-	you may not use this file except in compliance with the License.
-	You may obtain a copy of the License at
-
-	http://www.apache.org/licenses/LICENSE-2.0
-
-	Unless required by applicable law or agreed to in writing, software
-	distributed under the License is distributed on an "AS IS" BASIS,
-	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-	See the License for the specific language governing permissions and
-	limitations under the License.
-*/
+//
+// Copyright 2015 Muhamad Lotfy
+// 
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+// http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #pragma once
 
@@ -68,47 +68,47 @@
 #define BCM_PCM_REG_MODE_FLEN(X)			((X)<<10)
 
 namespace WinWire {
-	namespace RPi2
-	{
+    namespace RPi2
+    {
 #include <pshpack4.h>
-		typedef struct _BCM_PCM_REGISTERS
-		{
-			ULONG ControlAndStatus;			// CS_A
-			ULONG Fifo;						// FIFO_A
-			ULONG Mode;						// MODE_A
-			ULONG ReceiveConfig;			// RXC_A
-			ULONG TransmitConfig;			// TXC_A
-			ULONG DreqLevel;				// DREQ_A
-			ULONG InterruptEnables;			// INTEN_A
-			ULONG InterruptStatusAndClear;	// INTSTC_A
-			ULONG GrayCodeMode;             // GRAY
-		} BCM_PCM_REGISTERS, *PBCM_PCM_REGISTERS;
+        typedef struct _BCM_PCM_REGISTERS
+        {
+            ULONG ControlAndStatus;			// CS_A
+            ULONG Fifo;						// FIFO_A
+            ULONG Mode;						// MODE_A
+            ULONG ReceiveConfig;			// RXC_A
+            ULONG TransmitConfig;			// TXC_A
+            ULONG DreqLevel;				// DREQ_A
+            ULONG InterruptEnables;			// INTEN_A
+            ULONG InterruptStatusAndClear;	// INTSTC_A
+            ULONG GrayCodeMode;             // GRAY
+        } BCM_PCM_REGISTERS, *PBCM_PCM_REGISTERS;
 #include <poppack.h>
 
-		static PBCM_PCM_REGISTERS PcmReg;
+        static PBCM_PCM_REGISTERS PcmReg;
 
-		void DumpPcmRegisters()
-		{
-			LogInfo(
-				"\nDumping PCM Registers\n"
-				"    Control and Status =         0x%08x\n"
-				"    DREQ Level =                 0x%08x\n"
-				"    Fifo =                       0x%08x\n"
-				"    GrayCode Mode =              0x%08x\n"
-				"    Interrupt Enables =          0x%08x\n"
-				"    Interrupt Status and Clear = 0x%08x\n"
-				"    Mode =                       0x%08x\n"
-				"    Receive Config =             0x%08x\n"
-				"    Transmit Config =            0x%08x\n",
-				READ_REGISTER_ULONG(&PcmReg->ControlAndStatus),
-				READ_REGISTER_ULONG(&PcmReg->DreqLevel),
-				READ_REGISTER_ULONG(&PcmReg->Fifo),
-				READ_REGISTER_ULONG(&PcmReg->GrayCodeMode),
-				READ_REGISTER_ULONG(&PcmReg->InterruptEnables),
-				READ_REGISTER_ULONG(&PcmReg->InterruptStatusAndClear),
-				READ_REGISTER_ULONG(&PcmReg->Mode),
-				READ_REGISTER_ULONG(&PcmReg->ReceiveConfig),
-				READ_REGISTER_ULONG(&PcmReg->TransmitConfig));
-		}
-	}
+        void DumpPcmRegisters()
+        {
+            LogInfo(
+                "\nDumping PCM Registers\n"
+                "    Control and Status =         0x%08x\n"
+                "    DREQ Level =                 0x%08x\n"
+                "    Fifo =                       0x%08x\n"
+                "    GrayCode Mode =              0x%08x\n"
+                "    Interrupt Enables =          0x%08x\n"
+                "    Interrupt Status and Clear = 0x%08x\n"
+                "    Mode =                       0x%08x\n"
+                "    Receive Config =             0x%08x\n"
+                "    Transmit Config =            0x%08x\n",
+                READ_REGISTER_ULONG(&PcmReg->ControlAndStatus),
+                READ_REGISTER_ULONG(&PcmReg->DreqLevel),
+                READ_REGISTER_ULONG(&PcmReg->Fifo),
+                READ_REGISTER_ULONG(&PcmReg->GrayCodeMode),
+                READ_REGISTER_ULONG(&PcmReg->InterruptEnables),
+                READ_REGISTER_ULONG(&PcmReg->InterruptStatusAndClear),
+                READ_REGISTER_ULONG(&PcmReg->Mode),
+                READ_REGISTER_ULONG(&PcmReg->ReceiveConfig),
+                READ_REGISTER_ULONG(&PcmReg->TransmitConfig));
+        }
+    }
 }

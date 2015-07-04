@@ -1,18 +1,18 @@
-/*
-	Copyright 2015 Muhamad Lotfy
-
-	Licensed under the Apache License, Version 2.0 (the "License");
-	you may not use this file except in compliance with the License.
-	You may obtain a copy of the License at
-
-	http://www.apache.org/licenses/LICENSE-2.0
-
-	Unless required by applicable law or agreed to in writing, software
-	distributed under the License is distributed on an "AS IS" BASIS,
-	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-	See the License for the specific language governing permissions and
-	limitations under the License.
-*/
+//
+// Copyright 2015 Muhamad Lotfy
+// 
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+// http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #pragma once
 
@@ -124,48 +124,45 @@
 
 
 namespace WinWire {
-	namespace RPi2
-	{
+    namespace RPi2 {
 #include <pshpack4.h>
-		typedef struct _BCM_PWM_REGISTERS
-		{
-			// using the chatty register names because
-			// the short register names are not self explanatory
-			ULONG Control;             // CTL
-			ULONG Status;              // STA
-			ULONG DmaConfig;		   // DMAC
-			ULONG Reserved0;		   // 
-			ULONG Ch1Range;			   // RNG1
-			ULONG Ch1Data;             // DAT1
-			ULONG FifoInput;		   // FIF1
-			ULONG Reserved1;           //
-			ULONG Ch2Range;            // RNG2
-			ULONG Ch2Data;             // DAT2
-		} BCM_PWM_REGISTERS, *PBCM_PWM_REGISTERS;
+        typedef struct _BCM_PWM_REGISTERS
+        {
+            ULONG Control;      // CTL
+            ULONG Status;       // STA
+            ULONG DmaConfig;    // DMAC
+            ULONG Reserved0;    // 
+            ULONG Ch1Range;	    // RNG1
+            ULONG Ch1Data;      // DAT1
+            ULONG FifoInput;    // FIF1
+            ULONG Reserved1;    //
+            ULONG Ch2Range;     // RNG2
+            ULONG Ch2Data;      // DAT2
+        } BCM_PWM_REGISTERS, *PBCM_PWM_REGISTERS;
 #include <poppack.h>
 
-		static PBCM_PWM_REGISTERS PwmReg;
+        static PBCM_PWM_REGISTERS PwmReg;
 
-		void DumpPwmRegisters()
-		{
-			LogInfo(
-				"\nDumping PWM Registers\n"
-				"    Control =    0x%08x\n"
-				"    Status =     0x%08x\n"
-				"    DMA Config = 0x%08x\n"
-				"    CH1 Range =  0x%08x\n"
-				"    CH1 Data =   0x%08x\n"
-				"    FIFO Input = 0x%08x\n"
-				"    CH2 Range =  0x%08x\n"
-				"    CH2 Data =   0x%08x\n",
-				READ_REGISTER_ULONG(&PwmReg->Control),
-				READ_REGISTER_ULONG(&PwmReg->Status),
-				READ_REGISTER_ULONG(&PwmReg->DmaConfig),
-				READ_REGISTER_ULONG(&PwmReg->Ch1Range),
-				READ_REGISTER_ULONG(&PwmReg->Ch1Data),
-				READ_REGISTER_ULONG(&PwmReg->FifoInput),
-				READ_REGISTER_ULONG(&PwmReg->Ch2Range),
-				READ_REGISTER_ULONG(&PwmReg->Ch2Data));
-		}
-	}
+        void DumpPwmRegisters()
+        {
+            LogInfo(
+                "\nDumping PWM Registers\n"
+                "    Control =    0x%08x\n"
+                "    Status =     0x%08x\n"
+                "    DMA Config = 0x%08x\n"
+                "    CH1 Range =  0x%08x\n"
+                "    CH1 Data =   0x%08x\n"
+                "    FIFO Input = 0x%08x\n"
+                "    CH2 Range =  0x%08x\n"
+                "    CH2 Data =   0x%08x\n",
+                READ_REGISTER_ULONG(&PwmReg->Control),
+                READ_REGISTER_ULONG(&PwmReg->Status),
+                READ_REGISTER_ULONG(&PwmReg->DmaConfig),
+                READ_REGISTER_ULONG(&PwmReg->Ch1Range),
+                READ_REGISTER_ULONG(&PwmReg->Ch1Data),
+                READ_REGISTER_ULONG(&PwmReg->FifoInput),
+                READ_REGISTER_ULONG(&PwmReg->Ch2Range),
+                READ_REGISTER_ULONG(&PwmReg->Ch2Data));
+        }
+    }
 }

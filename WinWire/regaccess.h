@@ -32,56 +32,56 @@
 extern "C" {
 #endif
 
-__forceinline
-ULONG
-READ_REGISTER_NOFENCE_ULONG (
-    _In_ _Notliteral_ volatile ULONG *Register
-    )
-{
+    __forceinline
+        ULONG
+        READ_REGISTER_NOFENCE_ULONG(
+            _In_ _Notliteral_ volatile ULONG *Register
+            )
+    {
 
-    return ReadULongNoFence(Register);
-}
+        return ReadULongNoFence(Register);
+    }
 
-__forceinline
-VOID
-WRITE_REGISTER_NOFENCE_ULONG (
-    _In_ _Notliteral_ volatile ULONG *Register,
-    _In_ ULONG Value
-    )
-{
+    __forceinline
+        VOID
+        WRITE_REGISTER_NOFENCE_ULONG(
+            _In_ _Notliteral_ volatile ULONG *Register,
+            _In_ ULONG Value
+            )
+    {
 
-    WriteULongNoFence(Register, Value);
+        WriteULongNoFence(Register, Value);
 
-    return;
-}
+        return;
+    }
 
-__forceinline
-ULONG
-READ_REGISTER_ULONG (
-    _In_ _Notliteral_ volatile ULONG *Register
-    )
-{
-    ULONG Value;
+    __forceinline
+        ULONG
+        READ_REGISTER_ULONG(
+            _In_ _Notliteral_ volatile ULONG *Register
+            )
+    {
+        ULONG Value;
 
-    _DataSynchronizationBarrier();
-    Value = READ_REGISTER_NOFENCE_ULONG(Register);
+        _DataSynchronizationBarrier();
+        Value = READ_REGISTER_NOFENCE_ULONG(Register);
 
-    return Value;
-}
+        return Value;
+    }
 
-__forceinline
-VOID
-WRITE_REGISTER_ULONG (
-    _In_ _Notliteral_ volatile ULONG *Register,
-    _In_ ULONG Value
-    )
-{
+    __forceinline
+        VOID
+        WRITE_REGISTER_ULONG(
+            _In_ _Notliteral_ volatile ULONG *Register,
+            _In_ ULONG Value
+            )
+    {
 
-    _DataSynchronizationBarrier();
-    WRITE_REGISTER_NOFENCE_ULONG(Register, Value);
+        _DataSynchronizationBarrier();
+        WRITE_REGISTER_NOFENCE_ULONG(Register, Value);
 
-    return;
-}
+        return;
+    }
 
 #ifdef __cplusplus
 }
