@@ -15,7 +15,7 @@
 */
 
 #define DEBUG_HPC
-#include "RPi2\Fx.h"
+#include "RPi2\RPi2Fx.h"
 
 using namespace WinWire::RPi2;
 
@@ -24,9 +24,9 @@ using namespace WinWire::RPi2;
 
 int __cdecl wmain()
 {
-	if (!Fx::Inst().Init())
+	if (!RPi2Fx::Inst().Init())
 	{
-		LogInfo("Failed to init WinWiringPi lib");
+		LogInfo("Failed to init WinWire lib for RPi2");
 		return -1;
 	}
 

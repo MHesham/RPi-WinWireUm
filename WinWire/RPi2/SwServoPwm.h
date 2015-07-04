@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include "RPi2\Fx.h"
+#include "RPi2\RPi2Fx.h"
 
 namespace WinWire {
 	namespace RPi2

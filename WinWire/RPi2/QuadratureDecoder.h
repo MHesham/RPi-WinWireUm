@@ -15,7 +15,7 @@
 */
 #pragma once
 
-#include "RPi2\Fx.h"
+#include "RPi2\RPi2Fx.h"
 #include <thread>
 #include <functional>
 
@@ -93,7 +93,7 @@ namespace WinWire {
 				}
 
 				GlobalShutdownWatcherThread = std::thread([&]() { GlobalShutdownWatcherWorker(); });
-				GlobalShutdownWaitableEvts[0] = Fx::Inst().GlobalShutdownEvt;
+				GlobalShutdownWaitableEvts[0] = RPi2Fx::Inst().GlobalShutdownEvt;
 				GlobalShutdownWaitableEvts[1] = LocalShutdownEvt;
 
 				return true;

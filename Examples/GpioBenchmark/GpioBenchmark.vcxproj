@@ -94,6 +94,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\..\WinWire\common.h" />
+    <ClInclude Include="..\..\WinWire\Fx.h" />
     <ClInclude Include="..\..\WinWire\HpcTimer.h" />
     <ClInclude Include="..\..\WinWire\FxKm.h" />
     <ClInclude Include="..\..\WinWire\regaccess.h" />
@@ -105,7 +106,6 @@
     <ClInclude Include="..\..\WinWire\RPi2\bcmpwm.h" />
     <ClInclude Include="..\..\WinWire\RPi2\NxtMotor.h" />
     <ClInclude Include="..\..\WinWire\RPi2\QuadratureDecoder.h" />
-    <ClInclude Include="..\..\WinWire\RPi2\Fx.h" />
     <ClInclude Include="..\..\WinWire\RPi2\SwPwm.h" />
     <ClInclude Include="..\..\WinWire\RPi2\SwServoPwm.h" />
     <ClInclude Include="..\..\WinWire\WinWireKm.h" />
