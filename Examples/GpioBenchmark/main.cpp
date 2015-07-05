@@ -30,7 +30,7 @@ int __cdecl wmain()
         return -1;
     }
 
-    BenchmarkGpio(BENCHMARK_GPIO_PIN, BENCHMARK_ITERATIONS);
+    RPi2Gpio::BenchmarkGpio(BENCHMARK_GPIO_PIN, BENCHMARK_ITERATIONS);
 
     return 0;
 }

@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <winioctl.h>
 #include "common.h"
 #include "WinWireKm.h"
 

@@ -156,7 +156,6 @@ namespace WinWire {
         //
         // DMA Control Block (needs to be 256bit aligned)
         //
-
         typedef struct _BCM_DMA_CB
         {
             __declspec(align(32)) ULONG TI;

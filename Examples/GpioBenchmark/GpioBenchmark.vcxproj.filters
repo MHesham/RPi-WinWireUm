@@ -31,12 +31,6 @@
     <ClInclude Include="..\..\WinWire\RPi2\bcmpwm.h">
       <Filter>WinWire\RPi2</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\WinWire\RPi2\NxtMotor.h">
-      <Filter>WinWire\RPi2</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\WinWire\RPi2\QuadratureDecoder.h">
-      <Filter>WinWire\RPi2</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\WinWire\RPi2\SwPwm.h">
       <Filter>WinWire\RPi2</Filter>
     </ClInclude>
@@ -47,6 +41,18 @@
       <Filter>WinWire</Filter>
     </ClInclude>
     <ClInclude Include="..\..\WinWire\Fx.h">
+      <Filter>WinWire</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\WinWire\HBridge.h">
+      <Filter>WinWire</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\WinWire\RPi2\RPi2Fx.h">
+      <Filter>WinWire\RPi2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\WinWire\QuadratureDecoder.h">
+      <Filter>WinWire</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\WinWire\NxtMotor.h">
       <Filter>WinWire</Filter>
     </ClInclude>
   </ItemGroup>

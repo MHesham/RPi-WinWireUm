@@ -65,6 +65,9 @@ namespace WinWire {
         class SwPwm
         {
         public:
+
+            typedef RPi2Gpio TGpioProvider;
+
             // 1 CB for setting GPIO CLR or SET register, the other wait for PWM fifo and do dummy write
             static const int STEP_NUM_CBS = 2;
             static const int CHANNEL_WIDTH_MAX = 256;
@@ -222,8 +225,8 @@ namespace WinWire {
 
                 for (int i = 0; i < NumChannels; ++i)
                 {
-                    GpioFuncSelect(ChannelGpioPin[i], BCM_GPIO_FSEL_Output);
-                    GpioPinWrite(ChannelGpioPin[i], 0);
+                    TGpioProvider::GpioPinSetDir(ChannelGpioPin[i], TGpioProvider::DIR_Output);
+                    TGpioProvider::GpioPinWrite(ChannelGpioPin[i], 0);
                 }
 
                 LogInfo("All Channels GPIO pins are set to output and asserted LOW");
@@ -422,8 +425,8 @@ namespace WinWire {
 
                 for (int i = 0; i < NumChannels; ++i)
                 {
-                    GpioFuncSelect(ChannelGpioPin[i], BCM_GPIO_FSEL_Output);
-                    GpioPinWrite(ChannelGpioPin[i], 0);
+                    TGpioProvider::GpioPinSetDir(ChannelGpioPin[i], TGpioProvider::DIR_Output);
+                    TGpioProvider::GpioPinWrite(ChannelGpioPin[i], 0);
                 }
             }
 

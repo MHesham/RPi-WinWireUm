@@ -45,3 +45,7 @@
 *.ilk
 *.suo
 *.sdf
+*.ipch
+*.resfiles
+*.Cache
+*.intermediate

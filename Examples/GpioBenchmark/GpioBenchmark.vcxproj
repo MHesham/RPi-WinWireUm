@@ -95,8 +95,11 @@
   <ItemGroup>
     <ClInclude Include="..\..\WinWire\common.h" />
     <ClInclude Include="..\..\WinWire\Fx.h" />
+    <ClInclude Include="..\..\WinWire\HBridge.h" />
     <ClInclude Include="..\..\WinWire\HpcTimer.h" />
     <ClInclude Include="..\..\WinWire\FxKm.h" />
+    <ClInclude Include="..\..\WinWire\NxtMotor.h" />
+    <ClInclude Include="..\..\WinWire\QuadratureDecoder.h" />
     <ClInclude Include="..\..\WinWire\regaccess.h" />
     <ClInclude Include="..\..\WinWire\RPi2\bcm.h" />
     <ClInclude Include="..\..\WinWire\RPi2\bcmcm.h" />
@@ -104,8 +107,7 @@
     <ClInclude Include="..\..\WinWire\RPi2\bcmgpio.h" />
     <ClInclude Include="..\..\WinWire\RPi2\bcmpcm.h" />
     <ClInclude Include="..\..\WinWire\RPi2\bcmpwm.h" />
-    <ClInclude Include="..\..\WinWire\RPi2\NxtMotor.h" />
-    <ClInclude Include="..\..\WinWire\RPi2\QuadratureDecoder.h" />
+    <ClInclude Include="..\..\WinWire\RPi2\RPi2Fx.h" />
     <ClInclude Include="..\..\WinWire\RPi2\SwPwm.h" />
     <ClInclude Include="..\..\WinWire\RPi2\SwServoPwm.h" />
     <ClInclude Include="..\..\WinWire\WinWireKm.h" />

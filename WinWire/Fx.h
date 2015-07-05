@@ -23,8 +23,6 @@ namespace WinWire {
     {
     public:
 
-        virtual bool MapPrephirals() = 0;
-
         bool Init()
         {
             GlobalShutdownEvt = CreateEvent(NULL, TRUE, FALSE, NULL);
@@ -119,5 +117,7 @@ namespace WinWire {
 
     protected:
         Fx() {}
+
+        virtual bool MapPrephirals() = 0;
     };
 }

@@ -17,17 +17,20 @@
 //#define LOG_VERBOSE
 //#define DEBUG_TIMING
 #include "RPi2\RPi2Fx.h"
-#include "RPi2\NxtMotor.h"
 #include "RPi2\SwServoPwm.h"
+#include "NxtMotor.h"
 #include <iostream>
 
+using namespace WinWire;
 using namespace WinWire::RPi2;
 using namespace std;
 
+typedef NxtMotor<RPi2Gpio, SwPwm> DcMotorWithEncoder;
+
 void RobotArmControlTestWorker()
 {
-    NxtMotor baseMotor(BCM_GPIO17, BCM_GPIO24, BCM_GPIO25, BCM_GPIO22, BCM_GPIO23);
-    NxtMotor armMotor(BCM_GPIO16, BCM_GPIO5, BCM_GPIO6, BCM_GPIO12, BCM_GPIO13);
+    DcMotorWithEncoder baseMotor(BCM_GPIO17, BCM_GPIO24, BCM_GPIO25, BCM_GPIO22, BCM_GPIO23);
+    DcMotorWithEncoder armMotor(BCM_GPIO16, BCM_GPIO5, BCM_GPIO6, BCM_GPIO12, BCM_GPIO13);
 
     LogFuncEnter();
 
@@ -101,7 +104,7 @@ void MotorControlTestWorker()
 
     LogInfo("NXT Motor Control Test");
 
-    NxtMotor motor(BCM_GPIO17, BCM_GPIO24, BCM_GPIO25, BCM_GPIO22, BCM_GPIO23);
+    DcMotorWithEncoder motor(BCM_GPIO17, BCM_GPIO24, BCM_GPIO25, BCM_GPIO22, BCM_GPIO23);
 
     if (!motor.Init())
     {
@@ -151,7 +154,7 @@ void MotorRpmTestWorker()
 
     LogInfo("NXT Motor Rpm Test");
 
-    NxtMotor motor(BCM_GPIO17, BCM_GPIO24, BCM_GPIO25, BCM_GPIO22, BCM_GPIO23);
+    DcMotorWithEncoder motor(BCM_GPIO17, BCM_GPIO24, BCM_GPIO25, BCM_GPIO22, BCM_GPIO23);
 
     if (!motor.Init())
     {
@@ -199,8 +202,8 @@ void MotorRpmTestWorker()
 
 void MultiMotorPowerControlTest()
 {
-    NxtMotor baseMotor(BCM_GPIO17, BCM_GPIO24, BCM_GPIO25, BCM_GPIO22, BCM_GPIO23);
-    NxtMotor armMotor(BCM_GPIO16, BCM_GPIO5, BCM_GPIO6, BCM_GPIO12, BCM_GPIO13);
+    DcMotorWithEncoder baseMotor(BCM_GPIO17, BCM_GPIO24, BCM_GPIO25, BCM_GPIO22, BCM_GPIO23);
+    DcMotorWithEncoder armMotor(BCM_GPIO16, BCM_GPIO5, BCM_GPIO6, BCM_GPIO12, BCM_GPIO13);
 
     LogFuncEnter();
 
@@ -246,7 +249,7 @@ void MotorDegreeTestWorker()
 
     LogInfo("NXT Motor By Degree Control Test");
 
-    NxtMotor motor(BCM_GPIO17, BCM_GPIO24, BCM_GPIO25, BCM_GPIO22, BCM_GPIO23);
+    DcMotorWithEncoder motor(BCM_GPIO17, BCM_GPIO24, BCM_GPIO25, BCM_GPIO22, BCM_GPIO23);
 
     if (!motor.Init())
     {
@@ -290,7 +293,7 @@ int __cdecl wmain()
     }
 
     int pwmPins[] = { BCM_GPIO16, BCM_GPIO17 };
-    if (!SwPwm::Inst().Init(pwmPins, ARRAYSIZE(pwmPins), NxtMotor::PwmFrequencyHz))
+    if (!SwPwm::Inst().Init(pwmPins, ARRAYSIZE(pwmPins), DcMotorWithEncoder::PwmFrequencyHz))
     {
         LogError("Failed to init software PWM");
         return -1;

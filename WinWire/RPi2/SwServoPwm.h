@@ -93,6 +93,9 @@ namespace WinWire {
         class SwServoPwm
         {
         public:
+
+            typedef RPi2Gpio TGpioProvider;
+
             SwServoPwm() :
                 CtrlDataPA(NULL),
                 CtrlDataVA(nullptr)
@@ -232,8 +235,8 @@ namespace WinWire {
 
                 for (int i = 0; i < NUM_CHANNELS; ++i)
                 {
-                    GpioFuncSelect(ChannelGpioPin[i], BCM_GPIO_FSEL_Output);
-                    GpioPinWrite(ChannelGpioPin[i], 0);
+                    TGpioProvider::GpioPinSetDir(ChannelGpioPin[i], TGpioProvider::DIR_Output);
+                    TGpioProvider::GpioPinWrite(ChannelGpioPin[i], 0);
                 }
 
                 LogInfo("All Channels GPIO pins are set to output and asserted LOW");
@@ -403,8 +406,8 @@ namespace WinWire {
 
                 for (int i = 0; i < NUM_CHANNELS; ++i)
                 {
-                    GpioFuncSelect(ChannelGpioPin[i], BCM_GPIO_FSEL_Output);
-                    GpioPinWrite(ChannelGpioPin[i], 0);
+                    TGpioProvider::GpioPinSetDir(ChannelGpioPin[i], TGpioProvider::DIR_Output);
+                    TGpioProvider::GpioPinWrite(ChannelGpioPin[i], 0);
                 }
             }
 

@@ -99,104 +99,115 @@ namespace WinWire {
             BCM_GPIO_FSEL_Alt5 = 0x2,
         };
 
-        enum BCM_GPIO_PULL
-        {
-            BCM_GPIO_NOPULL = 0x0,
-            BCM_GPIO_PULLDOWN = 0x1,
-            BCM_GPIO_PULLUP = 0x2,
-        };
-
         static PBCM_GPIO_REGISTERS GpioReg;
 
-        __inline void GpioFuncSelect(int pinNum, BCM_GPIO_FSEL func)
+        class RPi2Gpio
         {
-            /*
-            A 3-in-1 Raspbian like function
-            #define INP_GPIO(g) *(gpio+((g)/10)) &= ~(7<<(((g)%10)*3))
-            #define OUT_GPIO(g) *(gpio+((g)/10)) |=  (1<<(((g)%10)*3))
-            #define SET_GPIO_ALT(g,a) *(gpio+(((g)/10))) |= (((a)<=3?(a)+4:(a)==4?3:2)<<(((g)%10)*3))
-            */
+        public:
 
-            // Each reg control 10 GPIO pins
-            int nFsel = pinNum / 10;
-            ULONG fsel = GpioReg->FuncSelect[nFsel];
-            // Each FSEL register controls 10 GPIO pins, and each pin
-            // has 3-bits for its function
-            int numShifts = (pinNum % 10) * 3;
-
-            // Unset the pin FSEL 3-bits
-            fsel &= ~(0x7 << numShifts);
-
-            // Set desired ALT function
-            fsel |= func << numShifts;
-
-            WRITE_REGISTER_ULONG(GpioReg->FuncSelect + nFsel, fsel);
-        }
-
-        __inline void GpioPinSetPull(int pinNum, BCM_GPIO_PULL pull)
-        {
-            // Each reg controls 32 GPIO pin
-            _ASSERT(pinNum < 32 && pinNum > 0 && "Pin number should be in the range [0,31]");
-
-            // At least wait 150 cycles per data-sheet
-            WRITE_REGISTER_NOFENCE_ULONG(&GpioReg->PullupPulldownEnable, pull);
-            MicroDelay(1);
-
-            WRITE_REGISTER_NOFENCE_ULONG(GpioReg->PullupPulldownEnableClock, 1 << pinNum);
-            MicroDelay(1);
-
-            WRITE_REGISTER_NOFENCE_ULONG(&GpioReg->PullupPulldownEnable, 0);
-            WRITE_REGISTER_NOFENCE_ULONG(GpioReg->PullupPulldownEnableClock, 0);
-        }
-
-        __inline void GpioPinWrite(int pinNum, bool state)
-        {
-            // Each reg controls 32 GPIO pin
-            _ASSERT(pinNum < 32 && pinNum > 0 && "Pin number should be in the range [0,31]");
-
-            // true -> HIGH
-            // false -> LOW
-            WRITE_REGISTER_NOFENCE_ULONG(state ? GpioReg->Set : GpioReg->Clear, 1 << pinNum);
-        }
-
-        __inline bool GpioPinRead(int pinNum)
-        {
-            // Each reg controls 32 GPIO pin
-            _ASSERT(pinNum < 32 && pinNum > 0 && "Pin number should be in the range [0,31]");
-
-            return (READ_REGISTER_NOFENCE_ULONG(GpioReg->Level) & (1 << pinNum)) > 0;
-        }
-
-        __inline ULONG GpioBank0Read()
-        {
-            return READ_REGISTER_NOFENCE_ULONG(GpioReg->Level);
-        }
-
-        __inline void BenchmarkGpio(int pinNum, const int numSamples)
-        {
-            HpcTimer timer;
-
-            GpioFuncSelect(pinNum, BCM_GPIO_FSEL_Output);
-
-            timer.Start();
-            for (int i = 0; i < numSamples; ++i)
+            enum
             {
-                GpioPinWrite(pinNum, (i & 1) > 0);
-            }
-            timer.Stop();
+                DIR_Input = 0x0,
+                DIR_Output = 0x1
+            };
 
-            LogInfo("GPIO Writes/Second = %f", timer.OperationsPerSecond(numSamples));
-
-            GpioFuncSelect(pinNum, BCM_GPIO_FSEL_Input);
-
-            timer.Start();
-            for (int i = 0; i < numSamples; ++i)
+            enum
             {
-                bool state = GpioPinRead(pinNum);
-            }
-            timer.Stop();
+                PULL_None = 0x0,
+                PULL_Down = 0x1,
+                PULL_Up = 0x2
+            };
 
-            LogInfo("GPIO Reads/Second = %f", timer.OperationsPerSecond(numSamples));
-        }
+            __inline static void GpioPinSetDir(int pinNum, int dir)
+            {
+                /*
+                A 3-in-1 Raspbian like function
+                #define INP_GPIO(g) *(gpio+((g)/10)) &= ~(7<<(((g)%10)*3))
+                #define OUT_GPIO(g) *(gpio+((g)/10)) |=  (1<<(((g)%10)*3))
+                #define SET_GPIO_ALT(g,a) *(gpio+(((g)/10))) |= (((a)<=3?(a)+4:(a)==4?3:2)<<(((g)%10)*3))
+                */
+
+                // Each reg control 10 GPIO pins
+                int nFsel = pinNum / 10;
+                ULONG fsel = GpioReg->FuncSelect[nFsel];
+                // Each FSEL register controls 10 GPIO pins, and each pin
+                // has 3-bits for its function
+                int numShifts = (pinNum % 10) * 3;
+
+                // Unset the pin FSEL 3-bits
+                fsel &= ~(0x7 << numShifts);
+
+                // Set desired ALT function
+                fsel |= dir << numShifts;
+
+                WRITE_REGISTER_NOFENCE_ULONG(GpioReg->FuncSelect + nFsel, fsel);
+            }
+
+            __inline static void GpioPinSetPull(int pinNum, int pull)
+            {
+                // Each reg controls 32 GPIO pin
+                _ASSERTE(pinNum < 32 && pinNum > 0 && "Pin number should be in the range [0,31]");
+
+                // At least wait 150 cycles per data-sheet
+                WRITE_REGISTER_NOFENCE_ULONG(&GpioReg->PullupPulldownEnable, pull);
+                MicroDelay(1);
+
+                WRITE_REGISTER_NOFENCE_ULONG(GpioReg->PullupPulldownEnableClock, 1 << pinNum);
+                MicroDelay(1);
+
+                WRITE_REGISTER_NOFENCE_ULONG(&GpioReg->PullupPulldownEnable, 0);
+                WRITE_REGISTER_NOFENCE_ULONG(GpioReg->PullupPulldownEnableClock, 0);
+            }
+
+            __inline static void GpioPinWrite(int pinNum, bool state)
+            {
+                // Each reg controls 32 GPIO pin
+                _ASSERT(pinNum < 32 && pinNum > 0 && "Pin number should be in the range [0,31]");
+
+                // true -> HIGH
+                // false -> LOW
+                WRITE_REGISTER_NOFENCE_ULONG(state ? GpioReg->Set : GpioReg->Clear, 1 << pinNum);
+            }
+
+            __inline static bool GpioPinRead(int pinNum)
+            {
+                // Each reg controls 32 GPIO pin
+                _ASSERTE(pinNum < 32 && pinNum > 0 && "Pin number should be in the range [0,31]");
+                return (READ_REGISTER_NOFENCE_ULONG(GpioReg->Level) & (1 << pinNum)) > 0;
+            }
+
+            __inline static ULONG GpioBankRead(int bank)
+            {
+                _ASSERTE(bank == 0 && "Only bank 0 is supported");
+                return READ_REGISTER_NOFENCE_ULONG(GpioReg->Level);
+            }
+
+            __inline static void BenchmarkGpio(int pinNum, const int numSamples)
+            {
+                HpcTimer timer;
+
+                GpioPinSetDir(pinNum, DIR_Output);
+
+                timer.Start();
+                for (int i = 0; i < numSamples; ++i)
+                {
+                    GpioPinWrite(pinNum, (i & 1) > 0);
+                }
+                timer.Stop();
+
+                LogInfo("GPIO Writes/Second = %f", timer.OperationsPerSecond(numSamples));
+
+                GpioPinSetDir(pinNum, DIR_Input);
+
+                timer.Start();
+                for (int i = 0; i < numSamples; ++i)
+                {
+                    bool state = GpioPinRead(pinNum);
+                }
+                timer.Stop();
+
+                LogInfo("GPIO Reads/Second = %f", timer.OperationsPerSecond(numSamples));
+            }
+        };
     }
 }
