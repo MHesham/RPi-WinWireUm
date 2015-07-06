@@ -52,6 +52,9 @@
     <ClInclude Include="..\..\WinWire\NxtMotor.h">
       <Filter>WinWire</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\WinWire\Test.h">
+      <Filter>WinWire</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />

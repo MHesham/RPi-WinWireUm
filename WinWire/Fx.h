@@ -41,14 +41,14 @@ namespace WinWire {
 
             LogInfo("Initializing WinWire Library");
 
-#ifdef SetPriorityClass
+#ifdef _WINRT_DLL
+			LogWarning("SetPriorityClass is not available, process will run in normal priority");
+#else
             if (!SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS))
             {
                 LogError("SetPriorityClass REALTIME_PRIORITY_CLASS failed, %d", GetLastError());
                 return false;
             }
-#else
-            LogWarning("SetPriorityClass is not available, process will run in normal priority");
 #endif
 
             LogInfo("HPC Info: Freq=%lldHz, Period=%fns 1MicroNumTicks=%f", HpcFreq.QuadPart, HpcPerdiodNs, HpcMicroNumTicks);

@@ -24,24 +24,25 @@ namespace WinWire {
     {
         HpcTimer timer;
 
-        TGpioProvider::Inst().GpioPinSetDir(pinNum, TGpioProvider::DIR_Output);
+		auto& gpioProvider = TGpioProvider::Inst();
+		gpioProvider.GpioPinSetDir(pinNum, TGpioProvider::DIR_Output);
 
         timer.Start();
         for (int i = 0; i < numSamples; ++i)
         {
-            TGpioProvider::Inst().GpioPinWrite(pinNum, (i & 1) > 0);
+			gpioProvider.GpioPinWrite(pinNum, (i & 1) > 0);
         }
         timer.Stop();
 
         double writeOps = timer.OperationsPerSecond(numSamples);
         LogInfo("GPIO Writes/Second = %d, Write=%fus", (int)writeOps, 1000000.0 / writeOps);
 
-        TGpioProvider::Inst().GpioPinSetDir(pinNum, TGpioProvider::DIR_Input);
+		gpioProvider.GpioPinSetDir(pinNum, TGpioProvider::DIR_Input);
 
         timer.Start();
         for (int i = 0; i < numSamples; ++i)
         {
-            bool state = TGpioProvider::Inst().GpioPinRead(pinNum);
+            bool state = gpioProvider.GpioPinRead(pinNum);
         }
         timer.Stop();
 
