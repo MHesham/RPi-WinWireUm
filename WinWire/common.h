@@ -35,7 +35,7 @@ namespace WinWire
     static double HpcMicroNumTicks;
     static double HpcPerdiodNs;
 
-    void DbgPrintf(const wchar_t* pTxtFormat, ...)
+    static void DbgPrintf(const wchar_t* pTxtFormat, ...)
     {
         const size_t LogBufferMax = 2048;
         wchar_t buffer[LogBufferMax];
@@ -77,8 +77,9 @@ namespace WinWire
 #endif
 
 #define LogError(S, ...) WinWire::DbgPrintf(L##"Error: "##S##"\n", __VA_ARGS__)
+#define LogWarning(S, ...) WinWire::DbgPrintf(L##"Warning: "##S##"\n", __VA_ARGS__)
 
-    void MicroDelay(unsigned us)
+    static void MicroDelay(unsigned us)
     {
         LARGE_INTEGER t0, t1, dTicks;
 
@@ -105,16 +106,15 @@ namespace WinWire
         }
     }
 
-    void MilliDelay(unsigned ms)
+    static void MilliDelay(unsigned ms)
     {
         MicroDelay(ms * 1000);
     }
 
 
-    int MapRange(int n, int n0, int n1, int m0, int m1)
+    static int MapRange(int n, int n0, int n1, int m0, int m1)
     {
         double p = (double)(n - n0) / (double)(n1 - n0);
         return m0 + (int)((m1 - m0) * p);
     }
-
 }

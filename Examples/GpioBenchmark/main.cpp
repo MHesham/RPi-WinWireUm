@@ -15,8 +15,11 @@
 //
 
 #define DEBUG_HPC
-#include "RPi2\RPi2Fx.h"
+#include "Test.h"
+#include "Fx.h"
+#include "RPi2\bcmgpio.h"
 
+using namespace WinWire;
 using namespace WinWire::RPi2;
 
 #define BENCHMARK_GPIO_PIN 22
@@ -24,13 +27,19 @@ using namespace WinWire::RPi2;
 
 int __cdecl wmain()
 {
-    if (!RPi2Fx::Inst().Init())
+    if (!Fx::Inst().Init())
     {
         LogInfo("Failed to init WinWire lib for RPi2");
         return -1;
     }
 
-    RPi2Gpio::BenchmarkGpio(BENCHMARK_GPIO_PIN, BENCHMARK_ITERATIONS);
+    if (!BcmGpio::Inst().Init())
+    {
+        LogError("Failed to init Gpio provider");
+        return -1;
+    }
+
+    BenchmarkGpio<BcmGpio>(BENCHMARK_GPIO_PIN, BENCHMARK_ITERATIONS);
 
     return 0;
 }

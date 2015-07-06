@@ -46,9 +46,6 @@
     <ClInclude Include="..\..\WinWire\HBridge.h">
       <Filter>WinWire</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\WinWire\RPi2\RPi2Fx.h">
-      <Filter>WinWire\RPi2</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\WinWire\QuadratureDecoder.h">
       <Filter>WinWire</Filter>
     </ClInclude>

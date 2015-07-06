@@ -22,6 +22,8 @@
 
 #include "common.h"
 #include "RPi2\bcm.h"
+#include "regaccess.h"
+#include "FxKm.h"
 
 #define BCM_GPIO_BASE_OFFSET		0x00200000
 #define BCM_GPIO_CPU_BASE			(BCM_CPU_PERIPH_BASE + BCM_GPIO_BASE_OFFSET)
@@ -99,9 +101,7 @@ namespace WinWire {
             BCM_GPIO_FSEL_Alt5 = 0x2,
         };
 
-        static PBCM_GPIO_REGISTERS GpioReg;
-
-        class RPi2Gpio
+        class BcmGpio
         {
         public:
 
@@ -118,7 +118,35 @@ namespace WinWire {
                 PULL_Up = 0x2
             };
 
-            __inline static void GpioPinSetDir(int pinNum, int dir)
+            BcmGpio() :
+                GpioReg(nullptr)
+            {}
+
+            static BcmGpio& Inst()
+            {
+                static BcmGpio inst;
+                return inst;
+            }
+
+            bool Init()
+            {
+                if (GpioReg)
+                    return true;
+
+                GpioReg = (PBCM_GPIO_REGISTERS)FxKm::Inst().Map((PVOID)BCM_GPIO_CPU_BASE, BCM_GPIO_REG_LEN).UserAddress;
+
+                if (!GpioReg)
+                {
+                    LogError("Map GPIO registers failed");
+                    return false;
+                }
+
+                LogInfo("GPIO Direct Access Acquired @VA:0x%08x @PA:0x%08x @BA:0x%08x", GpioReg, BCM_GPIO_CPU_BASE, BCM_CPU_TO_BUS_PERIPH_ADDR(BCM_GPIO_CPU_BASE));
+
+                return true;
+            }
+
+            __inline void GpioPinSetDir(int pinNum, int dir)
             {
                 /*
                 A 3-in-1 Raspbian like function
@@ -143,7 +171,7 @@ namespace WinWire {
                 WRITE_REGISTER_NOFENCE_ULONG(GpioReg->FuncSelect + nFsel, fsel);
             }
 
-            __inline static void GpioPinSetPull(int pinNum, int pull)
+            __inline void GpioPinSetPull(int pinNum, int pull)
             {
                 // Each reg controls 32 GPIO pin
                 _ASSERTE(pinNum < 32 && pinNum > 0 && "Pin number should be in the range [0,31]");
@@ -159,7 +187,7 @@ namespace WinWire {
                 WRITE_REGISTER_NOFENCE_ULONG(GpioReg->PullupPulldownEnableClock, 0);
             }
 
-            __inline static void GpioPinWrite(int pinNum, bool state)
+            __inline void GpioPinWrite(int pinNum, bool state)
             {
                 // Each reg controls 32 GPIO pin
                 _ASSERT(pinNum < 32 && pinNum > 0 && "Pin number should be in the range [0,31]");
@@ -169,45 +197,23 @@ namespace WinWire {
                 WRITE_REGISTER_NOFENCE_ULONG(state ? GpioReg->Set : GpioReg->Clear, 1 << pinNum);
             }
 
-            __inline static bool GpioPinRead(int pinNum)
+            __inline bool GpioPinRead(int pinNum)
             {
                 // Each reg controls 32 GPIO pin
                 _ASSERTE(pinNum < 32 && pinNum > 0 && "Pin number should be in the range [0,31]");
                 return (READ_REGISTER_NOFENCE_ULONG(GpioReg->Level) & (1 << pinNum)) > 0;
             }
 
-            __inline static ULONG GpioBankRead(int bank)
+            __inline ULONG GpioBankRead(int bank)
             {
                 _ASSERTE(bank == 0 && "Only bank 0 is supported");
                 return READ_REGISTER_NOFENCE_ULONG(GpioReg->Level);
             }
 
-            __inline static void BenchmarkGpio(int pinNum, const int numSamples)
-            {
-                HpcTimer timer;
+            PBCM_GPIO_REGISTERS Reg() const { return GpioReg; }
 
-                GpioPinSetDir(pinNum, DIR_Output);
-
-                timer.Start();
-                for (int i = 0; i < numSamples; ++i)
-                {
-                    GpioPinWrite(pinNum, (i & 1) > 0);
-                }
-                timer.Stop();
-
-                LogInfo("GPIO Writes/Second = %f", timer.OperationsPerSecond(numSamples));
-
-                GpioPinSetDir(pinNum, DIR_Input);
-
-                timer.Start();
-                for (int i = 0; i < numSamples; ++i)
-                {
-                    bool state = GpioPinRead(pinNum);
-                }
-                timer.Stop();
-
-                LogInfo("GPIO Reads/Second = %f", timer.OperationsPerSecond(numSamples));
-            }
+        private:
+            PBCM_GPIO_REGISTERS GpioReg;
         };
     }
 }

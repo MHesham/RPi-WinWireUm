@@ -141,28 +141,63 @@ namespace WinWire {
         } BCM_PWM_REGISTERS, *PBCM_PWM_REGISTERS;
 #include <poppack.h>
 
-        static PBCM_PWM_REGISTERS PwmReg;
-
-        void DumpPwmRegisters()
+        class BcmPwm
         {
-            LogInfo(
-                "\nDumping PWM Registers\n"
-                "    Control =    0x%08x\n"
-                "    Status =     0x%08x\n"
-                "    DMA Config = 0x%08x\n"
-                "    CH1 Range =  0x%08x\n"
-                "    CH1 Data =   0x%08x\n"
-                "    FIFO Input = 0x%08x\n"
-                "    CH2 Range =  0x%08x\n"
-                "    CH2 Data =   0x%08x\n",
-                READ_REGISTER_ULONG(&PwmReg->Control),
-                READ_REGISTER_ULONG(&PwmReg->Status),
-                READ_REGISTER_ULONG(&PwmReg->DmaConfig),
-                READ_REGISTER_ULONG(&PwmReg->Ch1Range),
-                READ_REGISTER_ULONG(&PwmReg->Ch1Data),
-                READ_REGISTER_ULONG(&PwmReg->FifoInput),
-                READ_REGISTER_ULONG(&PwmReg->Ch2Range),
-                READ_REGISTER_ULONG(&PwmReg->Ch2Data));
-        }
+        public:
+            BcmPwm() :
+                PwmReg(nullptr)
+            {}
+
+            static BcmPwm& Inst()
+            {
+                static BcmPwm inst;
+                return inst;
+            }
+
+            bool Init()
+            {
+                if (PwmReg)
+                    return true;
+
+                PwmReg = (PBCM_PWM_REGISTERS)FxKm::Inst().Map((PVOID)BCM_PWM_CPU_BASE, BCM_PWM_REG_LEN).UserAddress;
+
+                if (!PwmReg)
+                {
+                    LogError("Map PWM registers failed");
+                    return false;
+                }
+
+                LogInfo("PWM Direct Access Acquired @VA:0x%08x @PA:0x%08x @BA:0x%08x", PwmReg, BCM_PWM_CPU_BASE, BCM_CPU_TO_BUS_PERIPH_ADDR(BCM_PWM_CPU_BASE));
+
+                return true;
+            }
+
+            void DumpRegisters()
+            {
+                LogInfo(
+                    "\nDumping PWM Registers\n"
+                    "    Control =    0x%08x\n"
+                    "    Status =     0x%08x\n"
+                    "    DMA Config = 0x%08x\n"
+                    "    CH1 Range =  0x%08x\n"
+                    "    CH1 Data =   0x%08x\n"
+                    "    FIFO Input = 0x%08x\n"
+                    "    CH2 Range =  0x%08x\n"
+                    "    CH2 Data =   0x%08x\n",
+                    READ_REGISTER_ULONG(&PwmReg->Control),
+                    READ_REGISTER_ULONG(&PwmReg->Status),
+                    READ_REGISTER_ULONG(&PwmReg->DmaConfig),
+                    READ_REGISTER_ULONG(&PwmReg->Ch1Range),
+                    READ_REGISTER_ULONG(&PwmReg->Ch1Data),
+                    READ_REGISTER_ULONG(&PwmReg->FifoInput),
+                    READ_REGISTER_ULONG(&PwmReg->Ch2Range),
+                    READ_REGISTER_ULONG(&PwmReg->Ch2Data));
+            }
+
+            PBCM_PWM_REGISTERS Reg() const { return PwmReg; }
+
+        private:
+            PBCM_PWM_REGISTERS PwmReg;
+        };
     }
 }

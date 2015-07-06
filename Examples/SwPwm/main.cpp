@@ -16,19 +16,21 @@
 
 //#define LOG_VERBOSE
 //#define DEBUG_TIMING
-#include "RPi2\RPi2Fx.h"
+#include "Fx.h"
+#include "RPi2\bcmgpio.h"
 #include "RPi2\SwPwm.h"
 #include <iostream>
 #include <thread>
 
 using namespace WinWire::RPi2;
+using namespace WinWire;
 using namespace std;
 
 void PwmTestWorker()
 {
     LogFuncEnter();
 
-    for (int i = 100; i >= 0 && !RPi2Fx::Inst().GlobalShutdownFlag; i -= 5)
+    for (int i = 100; i >= 0 && !Fx::Inst().GlobalShutdownFlag; i -= 5)
     {
         double dutyCycle = (double)i / 100.0;
         LogInfo("Setting Duty Cycle=%f", dutyCycle);
@@ -43,9 +45,9 @@ void PwmTestWorker()
 
 int __cdecl wmain()
 {
-    if (!RPi2Fx::Inst().Init())
+    if (!Fx::Inst().Init())
     {
-        LogInfo("Failed to init WinWiringPi lib");
+        LogInfo("Failed to init WinWire lib");
         return -1;
     }
 
@@ -65,10 +67,8 @@ int __cdecl wmain()
 
     thread pwmTestThread(PwmTestWorker);
     system("pause");
-    RPi2Fx::Inst().Deinit();
+    Fx::Inst().Shutdown();
     pwmTestThread.join();
-
-    RPi2Fx::Inst().Deinit();
 
     return 0;
 }

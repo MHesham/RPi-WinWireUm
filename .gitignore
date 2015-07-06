@@ -49,3 +49,5 @@
 *.resfiles
 *.Cache
 *.intermediate
+*.exp
+*.appxrecipe

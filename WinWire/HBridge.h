@@ -28,28 +28,28 @@ namespace WinWire {
 
         bool Init()
         {
-            TGpioProvider::GpioPinSetDir(In1Pin, TGpioProvider::DIR_Output);
-            TGpioProvider::GpioPinSetDir(In2Pin, TGpioProvider::DIR_Output);
+            TGpioProvider::Inst().GpioPinSetDir(In1Pin, TGpioProvider::DIR_Output);
+            TGpioProvider::Inst().GpioPinSetDir(In2Pin, TGpioProvider::DIR_Output);
 
             return true;
         }
 
         void Forward()
         {
-            TGpioProvider::GpioPinWrite(In2Pin, false);
-            TGpioProvider::GpioPinWrite(In1Pin, true);
+            TGpioProvider::Inst().GpioPinWrite(In2Pin, false);
+            TGpioProvider::Inst().GpioPinWrite(In1Pin, true);
         }
 
         void Backward()
         {
-            TGpioProvider::GpioPinWrite(In1Pin, false);
-            TGpioProvider::GpioPinWrite(In2Pin, true);
+            TGpioProvider::Inst().GpioPinWrite(In1Pin, false);
+            TGpioProvider::Inst().GpioPinWrite(In2Pin, true);
         }
 
         void Stop()
         {
-            TGpioProvider::GpioPinWrite(In1Pin, false);
-            TGpioProvider::GpioPinWrite(In2Pin, false);
+            TGpioProvider::Inst().GpioPinWrite(In1Pin, false);
+            TGpioProvider::Inst().GpioPinWrite(In2Pin, false);
         }
 
     private:

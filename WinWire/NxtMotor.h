@@ -38,7 +38,7 @@ namespace WinWire {
 
         bool Init()
         {
-            TGpioProvider::GpioPinSetDir(EnablePin, TGpioProvider::DIR_Output);
+            TGpioProvider::Inst().GpioPinSetDir(EnablePin, TGpioProvider::DIR_Output);
 
             if (!MotorDriver.Init())
             {

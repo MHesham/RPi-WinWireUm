@@ -15,12 +15,14 @@
 //
 
 #define DEBUG_LOG
+#include "Fx.h"
 #include "RPi2\SwServoPwm.h"
 #include <iostream>
 #include <time.h>
 #include <thread>
 
 using namespace WinWire::RPi2;
+using namespace WinWire;
 using namespace std;
 
 SwServoPwm pwm;
@@ -94,9 +96,9 @@ void StressSwPwm()
 
 int __cdecl wmain()
 {
-    if (!RPi2Fx::Inst().Init())
+    if (!Fx::Inst().Init())
     {
-        LogError("Failed to init Wi2Pi lib");
+        LogError("Failed to init WinWire lib");
         return false;
     }
 

@@ -20,8 +20,10 @@
 // BCM PWM Controller
 //
 
+#include "common.h"
 #include "RPi2\bcm.h"
-#include "RPi2\bcmgpio.h"
+#include "regaccess.h"
+#include "FxKm.h"
 
 //
 // BCM PWM controller registers.
@@ -85,30 +87,65 @@ namespace WinWire {
         } BCM_PCM_REGISTERS, *PBCM_PCM_REGISTERS;
 #include <poppack.h>
 
-        static PBCM_PCM_REGISTERS PcmReg;
-
-        void DumpPcmRegisters()
+        class BcmPcm
         {
-            LogInfo(
-                "\nDumping PCM Registers\n"
-                "    Control and Status =         0x%08x\n"
-                "    DREQ Level =                 0x%08x\n"
-                "    Fifo =                       0x%08x\n"
-                "    GrayCode Mode =              0x%08x\n"
-                "    Interrupt Enables =          0x%08x\n"
-                "    Interrupt Status and Clear = 0x%08x\n"
-                "    Mode =                       0x%08x\n"
-                "    Receive Config =             0x%08x\n"
-                "    Transmit Config =            0x%08x\n",
-                READ_REGISTER_ULONG(&PcmReg->ControlAndStatus),
-                READ_REGISTER_ULONG(&PcmReg->DreqLevel),
-                READ_REGISTER_ULONG(&PcmReg->Fifo),
-                READ_REGISTER_ULONG(&PcmReg->GrayCodeMode),
-                READ_REGISTER_ULONG(&PcmReg->InterruptEnables),
-                READ_REGISTER_ULONG(&PcmReg->InterruptStatusAndClear),
-                READ_REGISTER_ULONG(&PcmReg->Mode),
-                READ_REGISTER_ULONG(&PcmReg->ReceiveConfig),
-                READ_REGISTER_ULONG(&PcmReg->TransmitConfig));
-        }
+        public:
+            BcmPcm() :
+                PcmReg(nullptr)
+            {}
+
+            static BcmPcm& Inst()
+            {
+                static BcmPcm inst;
+                return inst;
+            }
+
+            bool Init()
+            {
+                if (PcmReg)
+                    return true;
+
+                PcmReg = (PBCM_PCM_REGISTERS)FxKm::Inst().Map((PVOID)BCM_PCM_CPU_BASE, BCM_PCM_REG_LEN).UserAddress;
+
+                if (!PcmReg)
+                {
+                    LogError("Map PCM registers failed");
+                    return false;
+                }
+
+                LogInfo("PCM Direct Access Acquired @VA:0x%08x @PA:0x%08x @BA:0x%08x", PcmReg, BCM_PCM_CPU_BASE, BCM_CPU_TO_BUS_PERIPH_ADDR(BCM_PCM_CPU_BASE));
+
+                return true;
+            }
+
+            void DumpRegisters()
+            {
+                LogInfo(
+                    "\nDumping PCM Registers\n"
+                    "    Control and Status =         0x%08x\n"
+                    "    DREQ Level =                 0x%08x\n"
+                    "    Fifo =                       0x%08x\n"
+                    "    GrayCode Mode =              0x%08x\n"
+                    "    Interrupt Enables =          0x%08x\n"
+                    "    Interrupt Status and Clear = 0x%08x\n"
+                    "    Mode =                       0x%08x\n"
+                    "    Receive Config =             0x%08x\n"
+                    "    Transmit Config =            0x%08x\n",
+                    READ_REGISTER_ULONG(&PcmReg->ControlAndStatus),
+                    READ_REGISTER_ULONG(&PcmReg->DreqLevel),
+                    READ_REGISTER_ULONG(&PcmReg->Fifo),
+                    READ_REGISTER_ULONG(&PcmReg->GrayCodeMode),
+                    READ_REGISTER_ULONG(&PcmReg->InterruptEnables),
+                    READ_REGISTER_ULONG(&PcmReg->InterruptStatusAndClear),
+                    READ_REGISTER_ULONG(&PcmReg->Mode),
+                    READ_REGISTER_ULONG(&PcmReg->ReceiveConfig),
+                    READ_REGISTER_ULONG(&PcmReg->TransmitConfig));
+            }
+
+            PBCM_PCM_REGISTERS Reg() const { return PcmReg; }
+
+        private:
+            PBCM_PCM_REGISTERS PcmReg;
+        };
     }
 }

@@ -16,6 +16,11 @@
 
 #pragma once
 
+#include "common.h"
+#include "regaccess.h"
+#include "FxKm.h"
+
+
 //
 // BCM Clock Manager
 //
@@ -70,82 +75,118 @@ namespace WinWire {
         } BCM_CM_REGISTERS, *PBCM_CM_REGISTERS;
 #include <poppack.h>
 
-        static PBCM_CM_REGISTERS CmReg;
-
-        bool StopPwmClock()
+        class BcmCm
         {
-            // Turn off PWM clock and wait for busy flag to go low
-            WRITE_REGISTER_ULONG(&CmReg->PwmControl, BCM_CM_PWM_PSSWD);
-            MicroDelay(100);
-
-            int cnt;
-            for (cnt = 0; cnt < BCM_PWMCLK_WAIT_CYCLE &&
-                READ_REGISTER_ULONG(&CmReg->PwmControl) & BCM_PWMCLK_CTL_BUSY;
-                ++cnt)
+        public:
+            static BcmCm& Inst()
             {
-                MicroDelay(BCM_PWMCLK_WAIT_STALL_US);
+                static BcmCm inst;
+                return inst;
             }
 
-            // If we couldn't shutdown the PWM clock, then forcibly kill it
-            if (cnt == BCM_PWMCLK_WAIT_CYCLE)
-            {
-                LogInfo("PWM clock graceful shutdown failed, forcibly killing it!");
-                WRITE_REGISTER_ULONG(&CmReg->PwmControl, BCM_CM_PWM_PSSWD | BCM_PWMCLK_CTL_KILL);
-                MicroDelay(100);
+            BcmCm() :
+                CmReg(nullptr)
+            {}
 
-                if (READ_REGISTER_ULONG(&CmReg->PwmControl) & BCM_PWMCLK_CTL_BUSY)
+            bool Init()
+            {
+                if (CmReg)
+                    return true;
+
+                CmReg = (PBCM_CM_REGISTERS)FxKm::Inst().Map((PVOID)BCM_CM_CPU_BASE, BCM_CM_REG_LEN).UserAddress;
+
+                if (!CmReg)
                 {
-                    LogError("Killing PWM clock failed");
+                    LogError("Map CM registers failed");
                     return false;
                 }
+
+                LogInfo("Clock Manager Direct Access Acquired @VA:0x%08x @PA:0x%08x @BA:0x%08x", CmReg, BCM_CM_CPU_BASE, BCM_CPU_TO_BUS_PERIPH_ADDR(BCM_CM_CPU_BASE));
+
+                return true;
             }
 
-            return true;
-        }
-
-        bool StopPcmClock()
-        {
-            // Turn off PCM clock and wait for busy flag to go low
-            WRITE_REGISTER_ULONG(&CmReg->PcmControl, BCM_CM_PCM_PSSWD);
-            MicroDelay(100);
-
-            int cnt;
-            for (cnt = 0; cnt < BCM_PCMCLK_WAIT_CYCLE &&
-                READ_REGISTER_ULONG(&CmReg->PcmControl) & BCM_PCMCLK_CTL_BUSY;
-                ++cnt)
+            bool StopPwmClock()
             {
-                MicroDelay(BCM_PCMCLK_WAIT_STALL_US);
-            }
-
-            // If we couldn't shutdown the PWM clock, then forcibly kill it
-            if (cnt == BCM_PCMCLK_WAIT_CYCLE)
-            {
-                LogInfo("PCM clock graceful shutdown failed, forcibly killing it!");
-                WRITE_REGISTER_ULONG(&CmReg->PcmControl, BCM_CM_PCM_PSSWD | BCM_PCMCLK_CTL_KILL);
+                // Turn off PWM clock and wait for busy flag to go low
+                WRITE_REGISTER_ULONG(&CmReg->PwmControl, BCM_CM_PWM_PSSWD);
                 MicroDelay(100);
 
-                if (READ_REGISTER_ULONG(&CmReg->PcmControl) & BCM_PCMCLK_CTL_BUSY)
+                int cnt;
+                for (cnt = 0; cnt < BCM_PWMCLK_WAIT_CYCLE &&
+                    READ_REGISTER_ULONG(&CmReg->PwmControl) & BCM_PWMCLK_CTL_BUSY;
+                    ++cnt)
                 {
-                    LogError("Killing PCM clock failed");
-                    return false;
+                    MicroDelay(BCM_PWMCLK_WAIT_STALL_US);
                 }
+
+                // If we couldn't shutdown the PWM clock, then forcibly kill it
+                if (cnt == BCM_PWMCLK_WAIT_CYCLE)
+                {
+                    LogInfo("PWM clock graceful shutdown failed, forcibly killing it!");
+                    WRITE_REGISTER_ULONG(&CmReg->PwmControl, BCM_CM_PWM_PSSWD | BCM_PWMCLK_CTL_KILL);
+                    MicroDelay(100);
+
+                    if (READ_REGISTER_ULONG(&CmReg->PwmControl) & BCM_PWMCLK_CTL_BUSY)
+                    {
+                        LogError("Killing PWM clock failed");
+                        return false;
+                    }
+                }
+
+                return true;
             }
 
-            return true;
-        }
+            bool StopPcmClock()
+            {
+                // Turn off PCM clock and wait for busy flag to go low
+                WRITE_REGISTER_ULONG(&CmReg->PcmControl, BCM_CM_PCM_PSSWD);
+                MicroDelay(100);
 
-        void DumpCmRegisters()
-        {
-            LogInfo(
-                "\nDumping CM Registers\n"
-                "    PCM Clock Control =    0x%08x\n"
-                "    PCM Clock Divisor =    0x%08x\n"
-                "    PWM Clock Control =    0x%08x\n"
-                "    PWM Clock Divisor =    0x%08x\n",
-                READ_REGISTER_ULONG(&CmReg->PcmControl),
-                READ_REGISTER_ULONG(&CmReg->PcmDivisor),
-                READ_REGISTER_ULONG(&CmReg->PwmControl),
-                READ_REGISTER_ULONG(&CmReg->PwmDivisor));
-        }
+                int cnt;
+                for (cnt = 0; cnt < BCM_PCMCLK_WAIT_CYCLE &&
+                    READ_REGISTER_ULONG(&CmReg->PcmControl) & BCM_PCMCLK_CTL_BUSY;
+                    ++cnt)
+                {
+                    MicroDelay(BCM_PCMCLK_WAIT_STALL_US);
+                }
+
+                // If we couldn't shutdown the PWM clock, then forcibly kill it
+                if (cnt == BCM_PCMCLK_WAIT_CYCLE)
+                {
+                    LogInfo("PCM clock graceful shutdown failed, forcibly killing it!");
+                    WRITE_REGISTER_ULONG(&CmReg->PcmControl, BCM_CM_PCM_PSSWD | BCM_PCMCLK_CTL_KILL);
+                    MicroDelay(100);
+
+                    if (READ_REGISTER_ULONG(&CmReg->PcmControl) & BCM_PCMCLK_CTL_BUSY)
+                    {
+                        LogError("Killing PCM clock failed");
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            void DumpRegisters()
+            {
+                LogInfo(
+                    "\nDumping CM Registers\n"
+                    "    PCM Clock Control =    0x%08x\n"
+                    "    PCM Clock Divisor =    0x%08x\n"
+                    "    PWM Clock Control =    0x%08x\n"
+                    "    PWM Clock Divisor =    0x%08x\n",
+                    READ_REGISTER_ULONG(&CmReg->PcmControl),
+                    READ_REGISTER_ULONG(&CmReg->PcmDivisor),
+                    READ_REGISTER_ULONG(&CmReg->PwmControl),
+                    READ_REGISTER_ULONG(&CmReg->PwmDivisor));
+            }
+
+            PBCM_CM_REGISTERS Reg() const { return CmReg; }
+
+        private:
+            PBCM_CM_REGISTERS CmReg;
+        };
+        
     }
 }

@@ -16,8 +16,8 @@
 
 //#define LOG_VERBOSE
 //#define DEBUG_TIMING
-#include "RPi2\RPi2Fx.h"
-#include "RPi2\SwServoPwm.h"
+#include "Fx.h"
+#include "RPi2\SwPwm.h"
 #include "NxtMotor.h"
 #include <iostream>
 
@@ -25,7 +25,7 @@ using namespace WinWire;
 using namespace WinWire::RPi2;
 using namespace std;
 
-typedef NxtMotor<RPi2Gpio, SwPwm> DcMotorWithEncoder;
+typedef NxtMotor<BcmGpio, SwPwm> DcMotorWithEncoder;
 
 void RobotArmControlTestWorker()
 {
@@ -44,7 +44,7 @@ void RobotArmControlTestWorker()
 
     char cmd;
 
-    for (;!RPi2Fx::Inst().Inst().GlobalShutdownFlag;)
+    for (;!Fx::Inst().Inst().GlobalShutdownFlag;)
     {
         cout << ">";
         cin >> cmd;
@@ -114,7 +114,7 @@ void MotorControlTestWorker()
 
     char cmd;
 
-    for (;!RPi2Fx::Inst().Inst().GlobalShutdownFlag;)
+    for (;!Fx::Inst().Inst().GlobalShutdownFlag;)
     {
         cout << ">";
         cin >> cmd;
@@ -164,7 +164,7 @@ void MotorRpmTestWorker()
 
     motor.Forward(100);
 
-    for (int i = 0; i < 20 && !RPi2Fx::Inst().GlobalShutdownFlag; ++i)
+    for (int i = 0; i < 20 && !Fx::Inst().GlobalShutdownFlag; ++i)
     {
         LogInfo("Forward RPM: %f", motor.GetDecoder().GetRpm());
         Sleep(1000);
@@ -172,7 +172,7 @@ void MotorRpmTestWorker()
 
     motor.Backward(100);
 
-    for (int i = 0; i < 20 && !RPi2Fx::Inst().GlobalShutdownFlag; ++i)
+    for (int i = 0; i < 20 && !Fx::Inst().GlobalShutdownFlag; ++i)
     {
         LogInfo("Backward RPM: %f", motor.GetDecoder().GetRpm());
         Sleep(1000);
@@ -215,7 +215,7 @@ void MultiMotorPowerControlTest()
         goto Exit;
     }
 
-    for (int i = 0; !RPi2Fx::Inst().Inst().GlobalShutdownFlag && i <= 100; i += 10)
+    for (int i = 0; !Fx::Inst().Inst().GlobalShutdownFlag && i <= 100; i += 10)
     {
         LogInfo("Base Forward @%d Arm Backward @%d", i, i);
 
@@ -225,7 +225,7 @@ void MultiMotorPowerControlTest()
         Sleep(2000);
     }
 
-    for (int i = 0; !RPi2Fx::Inst().Inst().GlobalShutdownFlag && i <= 100; i += 10)
+    for (int i = 0; !Fx::Inst().Inst().GlobalShutdownFlag && i <= 100; i += 10)
     {
         LogInfo("Base Backward @%d Arm Backward @%d", 100 - i, 100 - i);
 
@@ -259,7 +259,7 @@ void MotorDegreeTestWorker()
 
     LogInfo("Going forward in 1' increments");
 
-    for (int i = 1; !RPi2Fx::Inst().GlobalShutdownFlag && i <= 360; ++i)
+    for (int i = 1; !Fx::Inst().GlobalShutdownFlag && i <= 360; ++i)
     {
         LogVerbose("Itr%d Turn forward 1'", i);
 
@@ -270,7 +270,7 @@ void MotorDegreeTestWorker()
 
     //LogInfo("Going backward in 1' increments");
 
-    //for (int i = 1; !RPi2Fx::Inst().GlobalShutdownFlag && i <= 360; ++i)
+    //for (int i = 1; !Fx::Inst().GlobalShutdownFlag && i <= 360; ++i)
     //{
     //	LogVerbose("Itr%d Turn backward 1'", i);
 
@@ -286,7 +286,7 @@ void MotorDegreeTestWorker()
 
 int __cdecl wmain()
 {
-    if (!RPi2Fx::Inst().Init())
+    if (!Fx::Inst().Init())
     {
         LogInfo("Failed to init WinWiringPi lib");
         return -1;
@@ -318,21 +318,21 @@ int __cdecl wmain()
     case 'c':
         motorThread = std::thread(MotorControlTestWorker);
         motorThread.join();
-        RPi2Fx::Inst().Deinit();
+        Fx::Inst().Shutdown();
         break;
 
     case 'A':
     case 'a':
         motorThread = std::thread(RobotArmControlTestWorker);
         motorThread.join();
-        RPi2Fx::Inst().Deinit();
+        Fx::Inst().Shutdown();
         break;
 
     case 'D':
     case 'd':
         motorThread = std::thread(MotorDegreeTestWorker);
         system("pause");
-        RPi2Fx::Inst().Deinit();
+        Fx::Inst().Shutdown();
         motorThread.join();
         break;
 
@@ -340,7 +340,7 @@ int __cdecl wmain()
     case 'r':
         motorThread = std::thread(MotorRpmTestWorker);
         system("pause");
-        RPi2Fx::Inst().Deinit();
+        Fx::Inst().Shutdown();
         motorThread.join();
         break;
 
@@ -348,7 +348,7 @@ int __cdecl wmain()
     case 'p':
         motorThread = std::thread(MultiMotorPowerControlTest);
         system("pause");
-        RPi2Fx::Inst().Deinit();
+        Fx::Inst().Shutdown();
         motorThread.join();
         break;
 

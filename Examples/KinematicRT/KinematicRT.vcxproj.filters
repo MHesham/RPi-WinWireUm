@@ -1,0 +1,74 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Common">
+      <UniqueIdentifier>85a59cfd-1217-4dab-9e11-c2ae9c60e43c</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Assets">
+      <UniqueIdentifier>75f0fc57-1aec-44ac-bd9f-3ae31c012ae7</UniqueIdentifier>
+      <Extensions>bmp;fbx;gif;jpg;jpeg;tga;tiff;tif;png</Extensions>
+    </Filter>
+    <Image Include="Assets\Logo.scale-100.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\SmallLogo.scale-100.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\StoreLogo.scale-100.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\SplashScreen.scale-100.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\WideLogo.scale-100.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Filter Include="WinWire">
+      <UniqueIdentifier>{1b5a4fb5-c2b7-4f37-a7b1-59df9df0d364}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="StartupTask.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="StartupTask.h" />
+    <ClInclude Include="..\..\WinWire\common.h">
+      <Filter>WinWire</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\WinWire\Fx.h">
+      <Filter>WinWire</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\WinWire\FxKm.h">
+      <Filter>WinWire</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\WinWire\HBridge.h">
+      <Filter>WinWire</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\WinWire\HpcTimer.h">
+      <Filter>WinWire</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\WinWire\NxtMotor.h">
+      <Filter>WinWire</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\WinWire\QuadratureDecoder.h">
+      <Filter>WinWire</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\WinWire\regaccess.h">
+      <Filter>WinWire</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\WinWire\WinWireKm.h">
+      <Filter>WinWire</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\WinWire\Test.h">
+      <Filter>WinWire</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <AppxManifest Include="Package.appxmanifest" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="KinematicRT_TemporaryKey.pfx" />
+  </ItemGroup>
+</Project>

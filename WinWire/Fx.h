@@ -23,6 +23,12 @@ namespace WinWire {
     {
     public:
 
+        static Fx& Inst()
+        {
+            static Fx inst;
+            return inst;
+        }
+
         bool Init()
         {
             GlobalShutdownEvt = CreateEvent(NULL, TRUE, FALSE, NULL);
@@ -35,11 +41,15 @@ namespace WinWire {
 
             LogInfo("Initializing WinWire Library");
 
+#ifdef SetPriorityClass
             if (!SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS))
             {
                 LogError("SetPriorityClass REALTIME_PRIORITY_CLASS failed, %d", GetLastError());
                 return false;
             }
+#else
+            LogWarning("SetPriorityClass is not available, process will run in normal priority");
+#endif
 
             LogInfo("HPC Info: Freq=%lldHz, Period=%fns 1MicroNumTicks=%f", HpcFreq.QuadPart, HpcPerdiodNs, HpcMicroNumTicks);
 
@@ -95,18 +105,10 @@ namespace WinWire {
                 ArrowNumSamples);
 
 #endif
-            LogInfo("Mapping low level prephirals");
-
-            if (!MapPrephirals())
-            {
-                LogError("Failed to map prephirals registers");
-                return false;
-            }
-
             return true;
         }
 
-        void Deinit()
+        void Shutdown()
         {
             GlobalShutdownFlag = true;
             SetEvent(GlobalShutdownEvt);
@@ -114,10 +116,5 @@ namespace WinWire {
 
         volatile bool GlobalShutdownFlag;
         HANDLE GlobalShutdownEvt;
-
-    protected:
-        Fx() {}
-
-        virtual bool MapPrephirals() = 0;
     };
 }

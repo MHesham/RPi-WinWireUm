@@ -16,7 +16,10 @@
 
 #pragma once
 
+#include "common.h"
 #include "RPi2\bcm.h"
+#include "regaccess.h"
+#include "FxKm.h"
 
 //
 // BCM DMA Controller
@@ -168,20 +171,56 @@ namespace WinWire {
             ULONG RSVD1;
         } BCM_DMA_CB, *PBCM_DMA_CB;
 
-        static PBCM_DMA_REGISTERS DmaReg;
-
-        void DumpDmaRegisters()
+        class BcmDma
         {
-            LogInfo(
-                "\nDumping DMA Registers\n"
-                "    Enable =                   0x%08x\n"
-                "    CH14 Control And Status =  0x%08x\n"
-                "    CH14 Control Block Addr =  0x%08x\n"
-                "    CH14 Debug =               0x%08x\n",
-                READ_REGISTER_ULONG(&DmaReg->Enable),
-                READ_REGISTER_ULONG(&DmaReg->Ch14ControlAndStatus),
-                READ_REGISTER_ULONG(&DmaReg->Ch14ControlBlockAddr),
-                READ_REGISTER_ULONG(&DmaReg->Ch14Debug));
-        }
+        public:
+            
+            static BcmDma& Inst()
+            {
+                static BcmDma inst;
+                return inst;
+            }
+
+            BcmDma() :
+                DmaReg(nullptr)
+            {}
+
+            bool Init()
+            {
+                if (DmaReg)
+                    return true;
+
+                DmaReg = (PBCM_DMA_REGISTERS)FxKm::Inst().Map((PVOID)BCM_DMA_CPU_BASE, BCM_DMA_REG_LEN).UserAddress;
+
+                if (!DmaReg)
+                {
+                    LogError("Map DMA registers failed");
+                    return false;
+                }
+
+                LogInfo("DMA Direct Access Acquired @VA:0x%08x @PA:0x%08x @BA:0x%08x", DmaReg, BCM_DMA_CPU_BASE, BCM_CPU_TO_BUS_PERIPH_ADDR(BCM_DMA_CPU_BASE));
+
+                return true;
+            }
+
+            void DumpRegisters()
+            {
+                LogInfo(
+                    "\nDumping DMA Registers\n"
+                    "    Enable =                   0x%08x\n"
+                    "    CH14 Control And Status =  0x%08x\n"
+                    "    CH14 Control Block Addr =  0x%08x\n"
+                    "    CH14 Debug =               0x%08x\n",
+                    READ_REGISTER_ULONG(&DmaReg->Enable),
+                    READ_REGISTER_ULONG(&DmaReg->Ch14ControlAndStatus),
+                    READ_REGISTER_ULONG(&DmaReg->Ch14ControlBlockAddr),
+                    READ_REGISTER_ULONG(&DmaReg->Ch14Debug));
+            }
+
+            PBCM_DMA_REGISTERS Reg() const { return DmaReg; }
+
+        private:
+            PBCM_DMA_REGISTERS DmaReg;
+        };
     }
 }

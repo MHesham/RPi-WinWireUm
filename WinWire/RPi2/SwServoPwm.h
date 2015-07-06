@@ -16,7 +16,12 @@
 
 #pragma once
 
-#include "RPi2\RPi2Fx.h"
+#include "common.h"
+#include "regaccess.h"
+#include "RPi2\bcmgpio.h"
+#include "RPi2\bcmdma.h"
+#include "RPi2\bcmpwm.h"
+#include "RPi2\bcmcm.h"
 
 namespace WinWire {
     namespace RPi2 {
@@ -94,8 +99,6 @@ namespace WinWire {
         {
         public:
 
-            typedef RPi2Gpio TGpioProvider;
-
             SwServoPwm() :
                 CtrlDataPA(NULL),
                 CtrlDataVA(nullptr)
@@ -108,6 +111,14 @@ namespace WinWire {
 
             bool Init()
             {
+                if (!BcmGpio::Inst().Init() ||
+                    !BcmDma::Inst().Init() ||
+                    !BcmPwm::Inst().Init() ||
+                    !BcmCm::Inst().Init())
+                {
+                    return false;
+                }
+
                 LogInfo("SwServoPwm Configurations:\n"
                     "    Pulse Period: %dus\n"
                     "    Pulse Step Time: %dus\n"
@@ -153,9 +164,9 @@ namespace WinWire {
                     return false;
                 }
 
-                DumpPwmRegisters();
-                DumpCmRegisters();
-                DumpDmaRegisters();
+                BcmPwm::Inst().DumpRegisters();
+                BcmCm::Inst().DumpRegisters();
+                BcmDma::Inst().DumpRegisters();
 
                 return true;
             }
@@ -175,9 +186,10 @@ namespace WinWire {
                     width = CHANNEL_WIDTH_MIN;
                 else if (width > CHANNEL_WIDTH_MAX)
                     width = CHANNEL_WIDTH_MAX;
-
-                ULONG gpioClr0BA = BCM_GPIO_BUS_BASE + ((ULONG)GpioReg->Clear - (ULONG)GpioReg);
-                ULONG gpioSet0BA = BCM_GPIO_BUS_BASE + ((ULONG)GpioReg->Set - (ULONG)GpioReg);
+                
+                auto gpioReg = BcmGpio::Inst().Reg();
+                ULONG gpioClr0BA = BCM_GPIO_BUS_BASE + ((ULONG)gpioReg->Clear - (ULONG)gpioReg);
+                ULONG gpioSet0BA = BCM_GPIO_BUS_BASE + ((ULONG)gpioReg->Set - (ULONG)gpioReg);
                 PBCM_DMA_CB channelCB0 = CtrlDataVA->CB + channel * CHANNEL_NUM_STEPS * STEP_NUM_CBS;
                 PULONG channelStep = CtrlDataVA->Step + channel * CHANNEL_NUM_STEPS;
 
@@ -235,69 +247,72 @@ namespace WinWire {
 
                 for (int i = 0; i < NUM_CHANNELS; ++i)
                 {
-                    TGpioProvider::GpioPinSetDir(ChannelGpioPin[i], TGpioProvider::DIR_Output);
-                    TGpioProvider::GpioPinWrite(ChannelGpioPin[i], 0);
+                    BcmGpio::Inst().GpioPinSetDir(ChannelGpioPin[i], BcmGpio::DIR_Output);
+                    BcmGpio::Inst().GpioPinWrite(ChannelGpioPin[i], 0);
                 }
 
                 LogInfo("All Channels GPIO pins are set to output and asserted LOW");
 
                 // Turn off PWM controller
-                WRITE_REGISTER_ULONG(&PwmReg->Control, 0);
+                WRITE_REGISTER_ULONG(&BcmPwm::Inst().Reg()->Control, 0);
                 MicroDelay(10);
 
-                if (!StopPwmClock())
+                if (!BcmCm::Inst().StopPwmClock())
                     return false;
 
+                auto cmReg = BcmCm::Inst().Reg();
                 // Set PWM clock source
-                WRITE_REGISTER_ULONG(&CmReg->PwmControl, BCM_CM_PWM_PSSWD | BCM_PWMCLK_CTL_SRC_PLLD);
+                WRITE_REGISTER_ULONG(&cmReg->PwmControl, BCM_CM_PWM_PSSWD | BCM_PWMCLK_CTL_SRC_PLLD);
                 MicroDelay(100);
 
                 // Divisor = 500 = 1MHz Clock
-                WRITE_REGISTER_ULONG(&CmReg->PwmDivisor, BCM_CM_PWM_PSSWD | BCM_PWMCLK_DIV_INT(500));
+                WRITE_REGISTER_ULONG(&cmReg->PwmDivisor, BCM_CM_PWM_PSSWD | BCM_PWMCLK_DIV_INT(500));
                 MicroDelay(100);
 
                 // Enabl PWM clock and wait for busy flag to go high
-                WRITE_REGISTER_ULONG(&CmReg->PwmControl, BCM_CM_PWM_PSSWD | BCM_PWMCLK_CTL_ENABLE | BCM_PWMCLK_CTL_SRC_PLLD);
+                WRITE_REGISTER_ULONG(&cmReg->PwmControl, BCM_CM_PWM_PSSWD | BCM_PWMCLK_CTL_ENABLE | BCM_PWMCLK_CTL_SRC_PLLD);
                 MicroDelay(100);
 
-                while (!(READ_REGISTER_ULONG(&CmReg->PwmControl) & BCM_PWMCLK_CTL_BUSY));
+                while (!(READ_REGISTER_ULONG(&cmReg->PwmControl) & BCM_PWMCLK_CTL_BUSY));
 
                 LogInfo("PWM clock configured");
 
-                WRITE_REGISTER_ULONG(&PwmReg->Ch1Range, PULSE_STEP_TIME_US);
+                auto pwmReg = BcmPwm::Inst().Reg();
+                WRITE_REGISTER_ULONG(&pwmReg->Ch1Range, PULSE_STEP_TIME_US);
                 MicroDelay(10);
 
                 // Enable DMA and set PANIC and DREQ threshold to 15
-                WRITE_REGISTER_ULONG(&PwmReg->DmaConfig, BCM_PWM_REG_DMAC_ENAB | BCM_PWM_REG_DMAC_DREQ_15 | BCM_PWM_REG_DMAC_PANIC_15);
+                WRITE_REGISTER_ULONG(&pwmReg->DmaConfig, BCM_PWM_REG_DMAC_ENAB | BCM_PWM_REG_DMAC_DREQ_15 | BCM_PWM_REG_DMAC_PANIC_15);
                 MicroDelay(10);
 
                 // Clear CH1 FIFO
-                WRITE_REGISTER_ULONG(&PwmReg->Control, BCM_PWM_REG_CTL_CLRF1);
+                WRITE_REGISTER_ULONG(&pwmReg->Control, BCM_PWM_REG_CTL_CLRF1);
                 MicroDelay(10);
 
                 // Use PWM mode, PWM algorithm, FIFO for CH1 transmission and enable PWM on CH1
-                WRITE_REGISTER_ULONG(&PwmReg->Control, BCM_PWM_REG_CTL_USEF1 | BCM_PWM_REG_CTL_PWEN1);
+                WRITE_REGISTER_ULONG(&pwmReg->Control, BCM_PWM_REG_CTL_USEF1 | BCM_PWM_REG_CTL_PWEN1);
                 MicroDelay(10);
 
                 LogInfo("PWM controller configured");
 
                 // Initialize the DMA
-                WRITE_REGISTER_ULONG(&DmaReg->Ch14ControlAndStatus, BCM_DMA_CS_ABORT);
+                auto dmaReg = BcmDma::Inst().Reg();
+                WRITE_REGISTER_ULONG(&dmaReg->Ch14ControlAndStatus, BCM_DMA_CS_ABORT);
                 MicroDelay(100);
 
-                WRITE_REGISTER_ULONG(&DmaReg->Ch14ControlAndStatus, BCM_DMA_CS_RESET);
+                WRITE_REGISTER_ULONG(&dmaReg->Ch14ControlAndStatus, BCM_DMA_CS_RESET);
                 MicroDelay(10);
 
                 // Clear the read-only INT and END status flags by setting them
-                WRITE_REGISTER_ULONG(&DmaReg->Ch14ControlAndStatus, BCM_DMA_CS_INT | BCM_DMA_CS_END);
+                WRITE_REGISTER_ULONG(&dmaReg->Ch14ControlAndStatus, BCM_DMA_CS_INT | BCM_DMA_CS_END);
 
-                WRITE_REGISTER_ULONG(&DmaReg->Ch14ControlBlockAddr, GetControlDataCbBA(0));
+                WRITE_REGISTER_ULONG(&dmaReg->Ch14ControlBlockAddr, GetControlDataCbBA(0));
 
                 // Clear interesting debug flags
-                WRITE_REGISTER_ULONG(&DmaReg->Ch14Debug, BCM_DMA_DEBUG_FIFO_ERROR | BCM_DMA_DEBUG_READ_ERROR);
+                WRITE_REGISTER_ULONG(&dmaReg->Ch14Debug, BCM_DMA_DEBUG_FIFO_ERROR | BCM_DMA_DEBUG_READ_ERROR);
 
                 WRITE_REGISTER_ULONG(
-                    &DmaReg->Ch14ControlAndStatus,
+                    &dmaReg->Ch14ControlAndStatus,
                     BCM_DMA_CS_ACTIVE | BCM_DMA_WAIT_FOR_OUTSTADNDING_WRITES | BCM_DMA_CS_PANIC_PRIORITY(0x8) | BCM_DMA_CS_PRIORITY(0x8));
 
                 LogInfo("DMA controller configured");
@@ -332,8 +347,10 @@ namespace WinWire {
 
                 LogInfo("Touched all allocated DMA control blocks physical memory");
 
-                ULONG pwmFifoBA = BCM_PWM_BUS_BASE + ((ULONG)&PwmReg->FifoInput - (ULONG)PwmReg);
-                ULONG gpioClr0BA = BCM_GPIO_BUS_BASE + ((ULONG)GpioReg->Clear - (ULONG)GpioReg);
+                auto gpioReg = BcmGpio::Inst().Reg();
+                auto pwmReg = BcmPwm::Inst().Reg();
+                ULONG pwmFifoBA = BCM_PWM_BUS_BASE + ((ULONG)&pwmReg->FifoInput - (ULONG)pwmReg);
+                ULONG gpioClr0BA = BCM_GPIO_BUS_BASE + ((ULONG)gpioReg->Clear - (ULONG)gpioReg);
 
                 int currCbIdx = 0;
                 ULONG firstCbBA = 0;
@@ -383,22 +400,23 @@ namespace WinWire {
             {
                 LogInfo("Finalizing prephirals");
 
-                WRITE_REGISTER_ULONG(&PwmReg->Control, 0);
+                WRITE_REGISTER_ULONG(&BcmPwm::Inst().Reg()->Control, 0);
                 MicroDelay(100);
 
-                (void)StopPwmClock();
+                (void)BcmCm::Inst().StopPwmClock();
 
                 LogInfo("PWM controller and clock stopped");
 
                 //
                 // Stop the DMA engine
                 //
-                WRITE_REGISTER_ULONG(&DmaReg->Ch14ControlAndStatus, BCM_DMA_CS_ABORT);
+                auto dmaReg = BcmDma::Inst().Reg();
+                WRITE_REGISTER_ULONG(&dmaReg->Ch14ControlAndStatus, BCM_DMA_CS_ABORT);
                 MicroDelay(100);
 
-                WRITE_REGISTER_ULONG(&DmaReg->Ch14ControlAndStatus, READ_REGISTER_ULONG(&DmaReg->Ch14ControlAndStatus) & ~BCM_DMA_CS_ACTIVE);
-                WRITE_REGISTER_ULONG(&DmaReg->Ch14ControlBlockAddr, 0);
-                WRITE_REGISTER_ULONG(&DmaReg->Ch14ControlAndStatus, READ_REGISTER_ULONG(&DmaReg->Ch14ControlAndStatus) | BCM_DMA_CS_RESET);
+                WRITE_REGISTER_ULONG(&dmaReg->Ch14ControlAndStatus, READ_REGISTER_ULONG(&dmaReg->Ch14ControlAndStatus) & ~BCM_DMA_CS_ACTIVE);
+                WRITE_REGISTER_ULONG(&dmaReg->Ch14ControlBlockAddr, 0);
+                WRITE_REGISTER_ULONG(&dmaReg->Ch14ControlAndStatus, READ_REGISTER_ULONG(&dmaReg->Ch14ControlAndStatus) | BCM_DMA_CS_RESET);
 
                 MicroDelay(100);
 
@@ -406,8 +424,8 @@ namespace WinWire {
 
                 for (int i = 0; i < NUM_CHANNELS; ++i)
                 {
-                    TGpioProvider::GpioPinSetDir(ChannelGpioPin[i], TGpioProvider::DIR_Output);
-                    TGpioProvider::GpioPinWrite(ChannelGpioPin[i], 0);
+                    BcmGpio::Inst().GpioPinSetDir(ChannelGpioPin[i], BcmGpio::DIR_Output);
+                    BcmGpio::Inst().GpioPinWrite(ChannelGpioPin[i], 0);
                 }
             }
 

@@ -17,6 +17,7 @@
 #pragma once
 
 #include "common.h"
+#include "Fx.h"
 #include <thread>
 #include <functional>
 
@@ -62,8 +63,8 @@ namespace WinWire {
 
         bool Init()
         {
-            TGpioProvider::GpioPinSetDir(ChAPin, TGpioProvider::DIR_Input);
-            TGpioProvider::GpioPinSetDir(ChBPin, TGpioProvider::DIR_Input);
+            TGpioProvider::Inst().GpioPinSetDir(ChAPin, TGpioProvider::DIR_Input);
+            TGpioProvider::Inst().GpioPinSetDir(ChBPin, TGpioProvider::DIR_Input);
 
             if (!InitializeCriticalSectionAndSpinCount(&CounterLock, CounterLockSpinCount))
             {
@@ -93,7 +94,7 @@ namespace WinWire {
             }
 
             GlobalShutdownWatcherThread = std::thread([&]() { GlobalShutdownWatcherWorker(); });
-            GlobalShutdownWaitableEvts[0] = RPi2Fx::Inst().GlobalShutdownEvt;
+            GlobalShutdownWaitableEvts[0] = Fx::Inst().GlobalShutdownEvt;
             GlobalShutdownWaitableEvts[1] = LocalShutdownEvt;
 
             return true;
@@ -208,7 +209,7 @@ namespace WinWire {
 
             (void)QueryPerformanceCounter(&CountT0);
 
-            GpioBank0 = TGpioProvider::GpioBankRead(0);
+            GpioBank0 = TGpioProvider::Inst().GpioBankRead(0);
 
             ULONG newChAB = ((GpioBank0 & chAMask) ? 2 : 0) | ((GpioBank0 & chBMask) ? 1 : 0);
             EncoderReadings = newChAB;
@@ -227,7 +228,7 @@ namespace WinWire {
                     LogInfo("CounterStateMachineTickCount overflow!");
                 }
 
-                ULONG bank = TGpioProvider::GpioBankRead(0);
+                ULONG bank = TGpioProvider::Inst().GpioBankRead(0);
 
                 // No change in the GPIO pins state, nothing to do
                 if (bank == GpioBank0)
